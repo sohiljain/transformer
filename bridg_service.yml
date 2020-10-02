@@ -1,0 +1,23 @@
+serviceName: dg-transformer
+production:
+  type: batch
+  command:
+  environmentName: cdp
+  cpu: 4
+  memory: 64000
+  taskRole: /cdp/Services/dg-transformer/taskRole
+  environmentalVariables:
+  - Name: ALERT_SNS_PARAM
+    Value: /cdp/SNS/Alarm
+
+development:
+  type: batch
+  command:
+  environmentName: dev-cdp
+  cpu: 2
+  memory: 8192
+  taskRole: /dev-cdp/Services/dg-transformer/taskRole
+  environmentalVariables:
+  - Name: ALERT_SNS_PARAM
+    Value: /dev-cdp/SNS/Alarm
+
