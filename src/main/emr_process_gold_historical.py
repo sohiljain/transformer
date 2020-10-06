@@ -6,14 +6,14 @@ from pyspark.sql import SparkSession
 
 # Paths
 bucket = 'bridg-client-ftp'
-s3a_bucket = 's3a://xxxxx:yyyyyy@bridg-client-ftp'
+s3a_bucket = 's3a://xxxxx:yyyyy@bridg-client-ftp'
 s3_staging_path = 'dollargeneral/transformed/history_staging'
 s3_tmp_path = 'dollargeneral/transformed/tmp'
 s3_gold_path = 'dollargeneral/transformed/history_gold'
 s3_resource = boto3.resource('s3', aws_access_key_id='xxxxx',
-                             aws_secret_access_key='yyyyyy')
+                             aws_secret_access_key='yyyyy')
 s3_client = boto3.client('s3', aws_access_key_id='xxxxx',
-                         aws_secret_access_key='yyyyyy')
+                         aws_secret_access_key='yyyyy')
 
 # create logger
 logging.basicConfig(format='%(name)s:%(levelname)s:%(asctime)s:%(lineno)d: %(message)s', level=logging.INFO)
@@ -72,15 +72,15 @@ select b.*
 from dg_organization b"""
 table_queries['organization_partition_col'] = 'datecreated'
 
-table_queries['product'] = """
-select b.*
-from dg_product b"""
-table_queries['product_partition_col'] = 'datecreated'
-
 table_queries['product_category'] = """
 select b.*
 from dg_product_category b"""
 table_queries['product_category_partition_col'] = 'datecreated'
+
+table_queries['product'] = """
+select b.*, c.Name as Sourceproductcategoryname
+from dg_product b join dg_product_category c on b.Sourceproductcategorynumber = c.Sourcecategorynumber"""
+table_queries['product_partition_col'] = 'datecreated'
 
 
 # Creating temporary tables for joining data
@@ -206,18 +206,11 @@ if __name__ == '__main__':
     spark = SparkSession.builder.getOrCreate()
     logger.info('spark initiated')
 
-    # for table in ['trans_disc_xref']:
-    #     create_temptable(table, spark)
-    #     logger.info(f'{table} created')
+    for table in ['trans_disc_xref']:
+        create_temptable(table, spark)
+        logger.info(f'{table} created')
 
-    # for table in ['transactions', 'tenders', 'transaction_item', 'discounts']:
-    # for table in [ 'transaction_item']:
-    #     logger.info(f'Starting {table}')
-    #     create_temptable(table, spark)
-    #     format_gold_file(table, '202008', spark)
-    #     logger.info(f'Finished {table}')
-
-    for table in ['product', 'organization','product_category']:
+    for table in ['product', 'organization','product_category', 'transactions', 'tenders', 'transaction_item', 'discounts']:
         logger.info(f'Starting {table}')
         create_temptable(table, spark)
         format_gold_file(table, '202008', spark)

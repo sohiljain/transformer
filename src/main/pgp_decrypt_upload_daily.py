@@ -12,26 +12,27 @@ logger.setLevel(logging.INFO)
 
 #S3 object
 s3_resource = boto3.resource('s3', aws_access_key_id='xxxxx',
-                             aws_secret_access_key='yyyyyy')
+                             aws_secret_access_key='yyyyy')
 s3_client = boto3.client('s3', aws_access_key_id='xxxxx',
-                         aws_secret_access_key='yyyyyy')
+                         aws_secret_access_key='yyyyy')
 
 # root_dir = '/Users/sjain/PycharmProjects/dg_transformer/src'
 root_dir='/code'
 session = boto3.Session()
 bucket = 'bridg-client-ftp'
-passphrase = 'z7$JP}Q)HC*@9YXY'
+passphrase = 'zzzzz'
 gnupghome = f'{root_dir}/gpghome/'
 local_Path = f'{root_dir}/Documents/DG'
-staging_copy_path = 'dollargeneral/transformed/history_archive'
+staging_copy_path = 'dollargeneral/transformed/archive'
 
 # Paths
 decryption_key_Aurus = f'{root_dir}/gpghome/aurus_decrypt_key.gpg'
 decryption_key_1010 = f'{root_dir}/gpghome/1010_decrypt_key.gpg'
-remote_1010_path = 'dollargeneral/1010/Historical'
+remote_1010_path = 'dollargeneral/1010/Daily'
 remote_Aurus_path = 'dollargeneral/Aurus/Daily'
-s3_staging_path = 'dollargeneral/transformed/history_staging'
-s3_gold_path = 'dollargeneral/transformed/history_gold'
+s3_staging_path = 'dollargeneral/transformed/staging'
+s3_staging_path_1010 = 'dollargeneral/transformed/staging/1010'
+s3_gold_path = 'dollargeneral/transformed/gold'
 s3_tmp_path = 'dollargeneral/transformed/tmp'
 
 # Configuring gpg decrypter for Aurus & 1010
@@ -126,14 +127,11 @@ def process_1010(date_value=dt.datetime.now().strftime('%Y%m%d')):
     for folder in list_files_2:
         for result in paginator.paginate(Bucket=bucket,
                                          Prefix=f'{remote_1010_path}/{folder.title()}/bridg_{folder}_category_{date_value}'):
-            process_1010_files(result,gpg_1010,folder)
+            process_1010_files(result,gpg_1010,f'{folder}_category')
 
 
     # Delete file from local
     assert_file_exists(local_Path, 'tmp.csv.gz')
-
-    #Deleting temporary paths
-    s3_delete_file(f'{s3_staging_path}/tmp/')
 
     logger.info("1010 data processed to staging")
 
@@ -175,21 +173,17 @@ def process_1010_files(result,gpg_1010,folder):
                 s3_client.download_file(bucket, content['Key'], local_file_absolute_path)
                 logger.info(f'{local_file_absolute_path} downloaded')
 
-                # # Decrypt file
+                # Decrypt file
                 with open(local_file_absolute_path, 'rb') as f:
                     gpg_1010.decrypt_file(f, passphrase=passphrase, output="tmp.csv.gz")
                 logger.info(f'{local_file_absolute_path} decrypted to tmp.csv.gz')
                 os.remove(local_file_absolute_path)
 
-                if folder in ['product', 'organization']:
-                    s3_upload_file_path = f'''{s3_gold_path}/{folder.lower()}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
-                elif folder in ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'discounts']:
-                    partition_col = filename.split('_')[-1][0:8]
-                    s3_upload_file_path = f'''{s3_staging_path}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
-
+                # Upload file to staging by date partition
+                partition_col = filename.split('_')[-1][0:8]
+                s3_upload_file_path = f'''{s3_staging_path_1010}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
                 s3_resource.meta.client.upload_file(Filename='tmp.csv.gz', Bucket=bucket,
                                                     Key=s3_upload_file_path)
-
                 logger.info(f'tmp.csv.gz uploaded to {s3_upload_file_path}')
 
                 # Copying file from staging to archive directory to have a backup
@@ -200,11 +194,9 @@ def process_1010_files(result,gpg_1010,folder):
 
 if __name__ == '__main__':
     # Download & Upload Aurus files from bridg-client-ftp to s3 transformed directory
-    # process_aurus(bucket, remote_Aurus_path, local_Path, s3_staging_path, passphrase)
+    process_aurus(bucket, remote_Aurus_path, local_Path, s3_staging_path, passphrase)
 
     # Download & Upload 1010 files from bridg-client-ftp to s3 transformed directory
-    # for datecheck in ['20200912','20200913','20200914','20200915', '20200916','20200917','20200918','20200919','20200920','20200921']:
-    #     process_1010(datecheck)
-
-    process_1010('202008')
+    # for datecheck in ['20200912','20200913','20200914','20200915','20200916','20200917','20200919','20200920','20200921','20200922','20200923','20200924','20200925','20200926','20200927','20200928','20200929','20200930','20201001','20201002','20201003','20201004','20201005']:
+    process_1010()
 
