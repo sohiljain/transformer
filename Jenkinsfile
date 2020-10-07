@@ -7,6 +7,10 @@ pipeline {
                  description: "Deploys DG TRANSFORMER to Production",
                  defaultValue: false)
     }
+    booleanParam(name: "DEPLOY_DG_TRANSFORMER_TO_TESTING",
+                 description: "Deploys DG TRANSFORMER to Testing",
+                 defaultValue: false)
+    }
 
   agent any
   options {
@@ -62,6 +66,28 @@ pipeline {
           sh 'python3 deploy_bridg_service.py'
       }
     }
+
+    stage('Deploy CDP to DG TRANSFORMER Test') {
+      when {
+        allOf {
+          branch "onb-394"
+          expression { params.DEPLOY_DG_TRANSFORMER_TO_TESTING }
+        }
+      }
+      environment {
+        	AWS_ACCESS_KEY_ID = credentials('aws-bridg2-id')
+        	AWS_SECRET_ACCESS_KEY = credentials('aws-bridg2-secret')
+        	DEPLOYMENT = 'production'
+        	AWS_DEFAULT_REGION = 'us-west-2'
+      }
+      steps {
+ 	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
+          sh 'aws s3 cp s3://bridg-devops-production/bin/deploy_bridg_service.py .'
+          sh 'aws s3 cp src/main/emr.py s3://bridg-devops-production/bin/deploy_bridg_service.py'
+          sh 'python3 deploy_bridg_service.py'
+      }
+    }
+
   }
 
   post {
