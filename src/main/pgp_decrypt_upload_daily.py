@@ -10,7 +10,7 @@ logging.basicConfig(format='%(name)s:%(levelname)s:%(asctime)s:%(lineno)d: %(mes
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-#S3 object
+# S3 object
 s3_resource = boto3.resource('s3', aws_access_key_id='xxxxx',
                              aws_secret_access_key='yyyyy')
 s3_client = boto3.client('s3', aws_access_key_id='xxxxx',
@@ -114,7 +114,7 @@ def process_1010(date_value=dt.datetime.now().strftime('%Y%m%d')):
     gpg_1010 = gpg_decrytion(decryption_key_1010)
     paginator = s3_client.get_paginator('list_objects')
 
-    list_files = ['transactions', 'product','organization', 'tenders', 'transaction_item', 'trans_disc_xref',
+    list_files = ['transactions', 'product', 'organization', 'tenders', 'transaction_item', 'trans_disc_xref',
                   'discounts']
 
     list_files_2 = ['product']
@@ -122,13 +122,12 @@ def process_1010(date_value=dt.datetime.now().strftime('%Y%m%d')):
     for folder in list_files:
         for result in paginator.paginate(Bucket=bucket,
                                          Prefix=f'{remote_1010_path}/{folder.title()}/bridg_{folder}_{date_value}'):
-            process_1010_files(result,gpg_1010,folder)
+            process_1010_files(result, gpg_1010, folder)
 
     for folder in list_files_2:
         for result in paginator.paginate(Bucket=bucket,
                                          Prefix=f'{remote_1010_path}/{folder.title()}/bridg_{folder}_category_{date_value}'):
-            process_1010_files(result,gpg_1010,f'{folder}_category')
-
+            process_1010_files(result, gpg_1010, f'{folder}_category')
 
     # Delete file from local
     assert_file_exists(local_Path, 'tmp.csv.gz')
@@ -155,7 +154,7 @@ def copy_staging_files(s3_path, folder, filename):
     logger.info((f"Done copy staging file to {staging_copy_path}/{folder}/{filename}"))
 
 
-def process_1010_files(result,gpg_1010,folder):
+def process_1010_files(result, gpg_1010, folder):
     # Download each file individually
     for content in result['Contents']:
 
@@ -197,6 +196,5 @@ if __name__ == '__main__':
     process_aurus(bucket, remote_Aurus_path, local_Path, s3_staging_path, passphrase)
 
     # Download & Upload 1010 files from bridg-client-ftp to s3 transformed directory
-    # for datecheck in ['20200912','20200913','20200914','20200915','20200916','20200917','20200919','20200920','20200921','20200922','20200923','20200924','20200925','20200926','20200927','20200928','20200929','20200930','20201001','20201002','20201003','20201004','20201005']:
     process_1010()
 

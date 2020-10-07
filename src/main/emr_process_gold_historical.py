@@ -23,93 +23,93 @@ logger.setLevel(logging.INFO)
 # Create table queries
 table_queries = {}
 table_queries['transactions'] = """
-select b.*, concat(b.sourcetransactionnumber, '~', b.postransactionnumber , '~' ,b.registernumber) check_id
-from dg_transactions b"""
+select dgtrans.*, concat(dgtrans.sourcetransactionnumber, '~', dgtrans.postransactionnumber , '~' ,dgtrans.registernumber) check_id
+from dg_transactions dgtrans"""
 table_queries['transactions_partition_col'] = 'datecreated'
 
 table_queries['tenders'] = """
-select b.sourcecustomernumber, b.registernumber, b.transactiontimestamp, b.currency,
-'' as customer_name, concat(a.sourcetransactionnumber, '~', b.postransactionnumber , '~' ,b.registernumber) check_id,
-a.sourcetransactionnumber, a.sourceorganizationnumber, a.transactiondate, a.tendercode,
-a.tendername, a.tenderamt, a.accountnumbermasked,a.cardusagetype
-from dg_tenders a
-left join dg_transactions b
-    on a.dt=b.dt
-    and a.sourcetransactionnumber = b.sourcetransactionnumber
-    and a.sourceorganizationnumber = b.sourceorganizationnumber
-    and a.transactiondate = b.datecreated
+select dgtrans.sourcecustomernumber, dgtrans.registernumber, dgtrans.transactiontimestamp, dgtrans.currency,
+'' as customer_name, concat(dgtndrs.sourcetransactionnumber, '~', dgtrans.postransactionnumber , '~' ,dgtrans.registernumber) check_id,
+dgtndrs.sourcetransactionnumber, dgtndrs.sourceorganizationnumber, dgtndrs.transactiondate, dgtndrs.tendercode,
+dgtndrs.tendername, dgtndrs.tenderamt, dgtndrs.accountnumbermasked,dgtndrs.cardusagetype, dgtndrs.dt
+from dg_tenders dgtndrs
+left join dg_transactions dgtrans
+    on dgtndrs.dt=dgtrans.dt
+    and dgtndrs.sourcetransactionnumber = dgtrans.sourcetransactionnumber
+    and dgtndrs.sourceorganizationnumber = dgtrans.sourceorganizationnumber
+    and dgtndrs.transactiondate = dgtrans.datecreated
 """
 table_queries['tenders_partition_col'] = 'transactiondate'
 
 table_queries['transaction_item'] = """
-    select a.*, concat(a.sourcetransactionnumber, '~', b.postransactionnumber , '~' ,b.registernumber) check_id
-    from dg_transaction_item a join dg_transactions b
-    on a.dt=b.dt
-    and a.sourcetransactionnumber = b.sourcetransactionnumber
-    and a.sourceorganizationnumber =b.sourceorganizationnumber
-    and a.datecreated = b.datecreated
+    select dptrnitem.*, concat(dptrnitem.sourcetransactionnumber, '~', dgtrans.postransactionnumber , '~' ,dgtrans.registernumber) check_id, dgtrans.transactiontimestamp
+    from dg_transaction_item dptrnitem join dg_transactions dgtrans
+    on dptrnitem.dt=dgtrans.dt
+    and dptrnitem.sourcetransactionnumber = dgtrans.sourcetransactionnumber
+    and dptrnitem.sourceorganizationnumber =dgtrans.sourceorganizationnumber
+    and dptrnitem.datecreated = dgtrans.datecreated
     """
 table_queries['transaction_item_partition_col'] = 'datecreated'
 
 table_queries['discounts'] = """
     select
-    b.DateCreated, b.SourceTransactionNumber, b.SourceTransactionItemNumber, b.SourceOrganizationNumber, b.InvoiceDate,
-    b.ShipDate, b.SourceProductNumber, a.DiscountCode, a.DiscountAmt, c.DiscountType, c.DiscountDescription,
-    concat(b.sourcetransactionnumber, '~', d.postransactionnumber , '~' ,d.registernumber) check_id
-    from dg_trans_disc_xref a join dg_transaction_item b
-    on  a.dt=b.dt and
-        a.SourceTransactionItemNumber = b.SourceTransactionItemNumber
-    join dg_transactions d on a.dt=d.dt 
-        and b.Sourcetransactionnumber = d.Sourcetransactionnumber
-        and b.sourceorganizationnumber =d.sourceorganizationnumber
-        and b.datecreated = d.datecreated
-    join dg_discounts c on a.dt=c.dt 
-        and a.discountcode = c.discountcode"""
+    dptrnitem.DateCreated, dptrnitem.SourceTransactionNumber, dptrnitem.SourceTransactionItemNumber, dptrnitem.SourceOrganizationNumber, dptrnitem.InvoiceDate,
+    dptrnitem.ShipDate, dptrnitem.SourceProductNumber, dptrnxref.DiscountCode, dptrnxref.DiscountAmt, dgdisc.DiscountType, dgdisc.DiscountDescription,
+    concat(dptrnitem.sourcetransactionnumber, '~', dgtrans.postransactionnumber , '~' ,dgtrans.registernumber) check_id, dptrnxref.dt
+    from dg_trans_disc_xref dptrnxref join dg_transaction_item dptrnitem
+    on  dptrnxref.dt=dptrnitem.dt and
+        dptrnxref.SourceTransactionItemNumber = dptrnitem.SourceTransactionItemNumber
+    join dg_transactions dgtrans on dptrnxref.dt=dgtrans.dt 
+        and dptrnitem.Sourcetransactionnumber = dgtrans.Sourcetransactionnumber
+        and dptrnitem.sourceorganizationnumber = dgtrans.sourceorganizationnumber
+        and dptrnitem.datecreated = dgtrans.datecreated
+    join dg_discounts dgdisc on dptrnxref.dt=dgdisc.dt 
+        and dptrnxref.discountcode = dgdisc.discountcode"""
 table_queries['discounts_partition_col'] = 'datecreated'
 
 table_queries['organization'] = """
-select b.*
-from dg_organization b"""
+select dgorg.*
+from dg_organization dgorg"""
 table_queries['organization_partition_col'] = 'datecreated'
 
 table_queries['product_category'] = """
-select b.*
-from dg_product_category b"""
+select dgprodcatg.*
+from dg_product_category dgprodcatg"""
 table_queries['product_category_partition_col'] = 'datecreated'
 
 table_queries['product'] = """
-select b.*, c.Name as Sourceproductcategoryname
-from dg_product b join dg_product_category c on b.Sourceproductcategorynumber = c.Sourcecategorynumber"""
+select dgprod.*, dgprodcatg.Name as Sourceproductcategoryname
+from dg_product dgprod join dg_product_category dgprodcatg on dgprod.Sourceproductcategorynumber = dgprodcatg.Sourcecategorynumber"""
 table_queries['product_partition_col'] = 'datecreated'
 
 
 # Creating temporary tables for joining data
 def create_temptable(table_name, spark):
     table_path = f'{s3a_bucket}/{s3_staging_path}/{table_name}/'
-    logger.info(f'Creating table {table_name} on {table_path}')
+    logger.info(f'Creating table dg_{table_name} on {table_path}')
 
     df = spark.read.csv(table_path, sep='|', header=True, nullValue='\\N')
 
     if table_name == 'transactions':
-        (df.withColumn("SourceOrganizationNumber", df["SourceOrganizationNumber"].cast("integer"))
+        df = (df.withColumn("SourceOrganizationNumber", df["SourceOrganizationNumber"].cast("integer"))
          .withColumn("DateCreated", df["DateCreated"].cast("date"))
          .withColumn("registernumber", df["registernumber"].cast("integer")))
 
     if table_name == 'transaction_item':
-        (df.withColumn("SourceOrganizationNumber", df["SourceOrganizationNumber"].cast("integer"))
+        df = (df.withColumn("SourceOrganizationNumber", df["SourceOrganizationNumber"].cast("integer"))
          .withColumn("datecreated", df["datecreated"].cast("date")))
 
     if table_name == 'tenders':
-        (df.withColumn("SourceOrganizationNumber", df["SourceOrganizationNumber"].cast("integer"))
+        df = (df.withColumn("SourceOrganizationNumber", df["SourceOrganizationNumber"].cast("integer"))
          .withColumn("transactiondate", df["transactiondate"].cast("date"))
          .withColumn("tenderamt", df["tenderamt"].cast("double")))
 
     df.createOrReplaceTempView(f'dg_{table_name}')
-    logger.info(f'Created temp view for {table_name}')
+    logger.info(f'Created temp view for dg_{table_name}')
 
 
 # Renaming the gold file from part file
-def format_gold_file(table, date_value, spark):
+def format_gold_file(table, spark):
     try:
         logger.info(f'Executing query {table_queries.get(table)}')
         df = spark.sql(table_queries.get(table))
@@ -125,10 +125,6 @@ def format_gold_file(table, date_value, spark):
         sys.exit(1)
 
     try:
-        # from datetime import datetime
-        # datetime_str = date_value
-        # datetime_object = datetime.strptime(datetime_str, '%Y%m%d')
-        # dt = datetime_object.strftime("%Y-%m-%d")
         tmp_path_2 = f'{s3_tmp_path}/{table}/{partition_col}'
 
         logger.info(f'Moving files from {tmp_path_2} to gold')
@@ -138,21 +134,15 @@ def format_gold_file(table, date_value, spark):
                 'Key': key
             }
 
-            logger.info(key)
-            x = key.split('/')[-2]
-            logger.info(x)
-            dt = x.split('=')[1]
-            logger.info(dt)
-            s3_gold_temp = f'{s3_gold_path}/{table}/{table}_{dt}.psv.gz'
-            logger.info(s3_gold_temp)
+            dt = key.split('/')[-2].split('=')[1]
+            s3_gold_temp = f'{s3_gold_path}/{table}/bridg_{table}_{dt}.psv.gz'
             if 'transaction_item' in s3_gold_temp:
                 s3_gold_temp = s3_gold_temp.replace('transaction_', 'line_')
-            logger.info(f'Moving to {s3_gold_temp}')
-
+            logger.info(f'Moving files to {s3_gold_temp} ')
+            s3_delete_file(s3_gold_temp)
             s3_resource.meta.client.copy(copy_source, bucket, s3_gold_temp)
 
         logger.info(f'{tmp_path_2} renamed to {s3_gold_temp}')
-
 
     except Exception as e:
         logger.error(f'{e} Unable to rename file')
@@ -203,20 +193,23 @@ def get_matching_s3_keys(bucket, prefix='', suffix=''):
 
 if __name__ == '__main__':
 
-    spark = SparkSession.builder.getOrCreate()
-    logger.info('spark initiated')
+    try:
+        spark = SparkSession.builder.getOrCreate()
+        logger.info('spark initiated')
 
-    for table in ['trans_disc_xref']:
-        create_temptable(table, spark)
-        logger.info(f'{table} created')
+        for table in ['trans_disc_xref']:
+            create_temptable(table, spark)
+            logger.info(f'{table} created')
 
-    for table in ['product', 'organization','product_category', 'transactions', 'tenders', 'transaction_item', 'discounts']:
-        logger.info(f'Starting {table}')
-        create_temptable(table, spark)
-        format_gold_file(table, '202008', spark)
-        logger.info(f'Finished {table}')
+        for table in ['transactions', 'product_category', 'product', 'organization', 'tenders', 'transaction_item',
+                      'discounts']:
+            logger.info(f'Starting {table}')
+            create_temptable(table, spark)
+            format_gold_file(table, spark)
+            logger.info(f'Finished {table}')
 
-    # s3_delete_file(s3_tmp_path)
-    # logger.info(f"Deleted temporary file path {s3_tmp_path}")
-    # s3_delete_file(s3_staging_path)
-    # logger.info(f"Deleted staging file path {s3_staging_path}")
+    finally:
+        s3_delete_file(s3_tmp_path)
+        logger.info(f"Deleted temporary file path {s3_tmp_path}")
+        s3_delete_file(s3_staging_path)
+        logger.info(f"Deleted staging file path {s3_staging_path}")
