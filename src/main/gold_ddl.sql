@@ -132,21 +132,22 @@ TBLPROPERTIES ('has_encrypted_data'='true');
 
 
 CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_organization_gold (
-SourceOrganizationNumber string,
-OrgName string,
+SourceOrganizationNumberkey string,
+Name string,
 Status string,
 OrgType string,
 Subtype string,
 ParentSourceOrganizationNumber string,
 Country string,
-OrgState string,
+State string,
 City string,
-Address1 string,
-Address2 string,
+Addr_line_1 string,
+Addr_line_2 string,
 Zip string,
 ExcludeAsClosestStore string,
 DateCreated string,
-CustomAttributes string
+CustomAttributes string,
+dt string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
 WITH SERDEPROPERTIES (
@@ -252,7 +253,7 @@ CouponAmt string,
 POSDiscAmt string,
 ManufacturerCouponAmt string,
 RegisterNumber string,
-Account_Number_Masked string,
+AccountNumberMasked string,
 postransactionnumber string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
@@ -347,7 +348,7 @@ TBLPROPERTIES ('has_encrypted_data'='true');
 
 CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_category(
   sourcecategorynumber string,
-  productcategoryname string,
+  name string,
   sourceparentcategorynumber string,
   datecreated string,
   customattributes string
@@ -367,21 +368,21 @@ TBLPROPERTIES (
 
 
 CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_organization_archive (
-SourceOrganizationNumber string,
-OrgName string,
+SourceOrganizationNumberkey string,
+Name string,
 Status string,
 OrgType string,
 Subtype string,
 ParentSourceOrganizationNumber string,
 Country string,
-OrgState string,
+State string,
 City string,
-Address1 string,
-Address2 string,
+Addr_line_1 string,
+Addr_line_2 string,
 Zip string,
 ExcludeAsClosestStore string,
 DateCreated string,
-CustomAttributes string
+CustomAttributes string,
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
 WITH SERDEPROPERTIES (
@@ -396,7 +397,7 @@ TBLPROPERTIES ('has_encrypted_data'='true');
 
 CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_archive (
 SourceProductNumber string,
-ProductName string,
+Name string,
 Description string,
 ProductURL string,
 ImageURL string,
@@ -409,7 +410,7 @@ SaleCondition string,
 Availability string,
 AvailableQty string,
 RecoStatus string,
-ProductSize string,
+Size string,
 Color string,
 SourceProductCategoryNumber string,
 DateCreated string,
@@ -428,7 +429,7 @@ TBLPROPERTIES ('has_encrypted_data'='true');
 
 CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_category_archive (
 SourceCategoryNumber string,
-ProductCategoryName string,
+Name string,
 SourceParentCategoryNumber string,
 DateCreated string,
 CustomAttributes string
@@ -441,4 +442,19 @@ WITH SERDEPROPERTIES (
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
 ) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/archive/product_category/'
+TBLPROPERTIES ('has_encrypted_data'='true');
+
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_discounts_archive(
+  discountcode string,
+  discountdescription string,
+  discounttype string
+)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+WITH SERDEPROPERTIES (
+  'serialization.format' = '|',
+  'field.delim' = '|',
+  'collection.delim' = 'undefined',
+  'mapkey.delim' = 'undefined',
+  "skip.header.line.count"="1"
+) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/archive/discounts'
 TBLPROPERTIES ('has_encrypted_data'='true');
