@@ -15,8 +15,9 @@ CouponAmt string,
 POSDiscAmt string,
 ManufacturerCouponAmt string,
 RegisterNumber string,
-Account_Number_Masked string
+AccountNumberMasked string,
 postransactionnumber string,
+dt string,
 checkid string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
@@ -45,7 +46,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_tenders_gold
 	tendername string,
 	tenderamt double,
 	accountnumbermasked string,
-	cardusagetype string
+	cardusagetype string,
+	dt string
  )ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
 WITH SERDEPROPERTIES (
   'serialization.format' = '|',
@@ -83,6 +85,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_transaction_item_gold (
  otherrevenue string,
  othercosts string,
  datecreated date,
+ dt string,
  checkid string,
  transactiontimestamp string
  )
@@ -114,7 +117,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_discounts_gold(
 	discountamt string,
 	discounttype string,
 	discountdescription string,
-	check_id string
+	check_id string,
+	dt string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
 WITH SERDEPROPERTIES (
@@ -157,7 +161,7 @@ TBLPROPERTIES ('has_encrypted_data'='true');
 
 CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_gold (
 SourceProductNumber string,
-ProductName string,
+Name string,
 Description string,
 ProductURL string,
 ImageURL string,
@@ -170,11 +174,12 @@ SaleCondition string,
 Availability string,
 AvailableQty string,
 RecoStatus string,
-ProductSize string,
+Size string,
 Color string,
 SourceProductCategoryNumber string,
 DateCreated string,
 CustomAttributes string,
+dt string,
 Sourceproductcategoryname string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
@@ -190,10 +195,11 @@ TBLPROPERTIES ('has_encrypted_data'='true');
 
 CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_category_gold (
 SourceCategoryNumber string,
-ProductCategoryName string,
+Name string,
 SourceParentCategoryNumber string,
 DateCreated string,
-CustomAttributes string
+CustomAttributes string,
+dt string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
 WITH SERDEPROPERTIES (
@@ -436,4 +442,3 @@ WITH SERDEPROPERTIES (
   "skip.header.line.count"="1"
 ) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/archive/product_category/'
 TBLPROPERTIES ('has_encrypted_data'='true');
-
