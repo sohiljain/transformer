@@ -11,10 +11,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # EMR file upload to s3 bucket
-s3_resource = boto3.resource('s3', aws_access_key_id='xxxxx',
-                             aws_secret_access_key='yyyyy')
-s3_client = boto3.client('s3', aws_access_key_id='xxxxx',
-                         aws_secret_access_key='yyyyy')
+s3_resource = boto3.resource('s3')
+s3_client = boto3.client('s3')
 
 bucket = 'bridg-client-ftp'
 root_dir = '/code'
@@ -130,8 +128,8 @@ cluster_id = connection.run_job_flow(
                 'Name': "Slave nodes",
                 'Market': 'ON_DEMAND',
                 'InstanceRole': 'TASK',
-                'InstanceType': 'm5.8xlarge',
-                'InstanceCount': 5,
+                'InstanceType': 'm5.2xlarge',
+                'InstanceCount': 2,
                 'EbsConfiguration': {
                     'EbsBlockDeviceConfigs': [
                         {

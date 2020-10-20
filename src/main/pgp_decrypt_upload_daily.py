@@ -11,16 +11,14 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # S3 object
-s3_resource = boto3.resource('s3', aws_access_key_id='xxxxx',
-                             aws_secret_access_key='yyyyy')
-s3_client = boto3.client('s3', aws_access_key_id='xxxxx',
-                         aws_secret_access_key='yyyyy')
+s3_resource = boto3.resource('s3')
+s3_client = boto3.client('s3')
 
 # root_dir = '/Users/sjain/PycharmProjects/dg_transformer/src'
 root_dir='/code'
 session = boto3.Session()
 bucket = 'bridg-client-ftp'
-passphrase = 'zzzzz'
+passphrase = 'z7$JP}Q)HC*@9YXY'
 gnupghome = f'{root_dir}/gpghome/'
 local_Path = f'{root_dir}/Documents/DG'
 staging_copy_path = 'dollargeneral/transformed/archive'
@@ -33,7 +31,7 @@ remote_Aurus_path = 'dollargeneral/Aurus/Daily'
 s3_staging_path = 'dollargeneral/transformed/staging'
 s3_staging_path_1010 = 'dollargeneral/transformed/staging/1010'
 s3_gold_path = 'dollargeneral/transformed/gold'
-s3_tmp_path = 'dollargeneral/transformed/tmp'
+s3_tmp_path = 'dollargeneral/transformed/temp'
 
 # Configuring gpg decrypter for Aurus & 1010
 def gpg_decrytion(decryption_key):
@@ -114,20 +112,19 @@ def process_1010(date_value=dt.datetime.now().strftime('%Y%m%d')):
     gpg_1010 = gpg_decrytion(decryption_key_1010)
     paginator = s3_client.get_paginator('list_objects')
 
-    list_files = ['transactions', 'product', 'organization', 'tenders', 'transaction_item', 'trans_disc_xref',
-                  'discounts']
+    list_files = ['transactions', 'product', 'product_category', 'organization', 'tenders', 'transaction_item', 'trans_disc_xref', 'discounts']
 
-    list_files_2 = ['product']
+    # list_files_2 = []
 
     for folder in list_files:
         for result in paginator.paginate(Bucket=bucket,
                                          Prefix=f'{remote_1010_path}/{folder.title()}/bridg_{folder}_{date_value}'):
             process_1010_files(result, gpg_1010, folder)
 
-    for folder in list_files_2:
-        for result in paginator.paginate(Bucket=bucket,
-                                         Prefix=f'{remote_1010_path}/{folder.title()}/bridg_{folder}_category_{date_value}'):
-            process_1010_files(result, gpg_1010, f'{folder}_category')
+    # for folder in list_files_2:
+    #     for result in paginator.paginate(Bucket=bucket,
+    #                                      Prefix=f'{remote_1010_path}/{folder.title()}/bridg_{folder}_category_{date_value}'):
+    #         process_1010_files(result, gpg_1010, f'{folder}_category')
 
     # Delete file from local
     assert_file_exists(local_Path, 'tmp.csv.gz')
