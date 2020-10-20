@@ -6,7 +6,6 @@ pipeline {
     booleanParam(name: "DEPLOY_DG_TRANSFORMER_TO_PRODUCTION",
                  description: "Deploys DG TRANSFORMER to Production",
                  defaultValue: false)
-    }
     booleanParam(name: "DEPLOY_DG_TRANSFORMER_TO_TESTING",
                  description: "Deploys DG TRANSFORMER to Testing",
                  defaultValue: false)
