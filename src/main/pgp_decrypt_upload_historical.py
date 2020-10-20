@@ -1,8 +1,9 @@
 import boto3
 import gnupg
-import os, logging
+import os, logging, sys
 import datetime as dt
 import errno
+from botocore.exceptions import ClientError
 from io import StringIO
 
 # create logger
@@ -24,18 +25,21 @@ local_Path = f'{root_dir}/Documents/DG'
 staging_copy_path = 'dollargeneral/transformed/history_archive'
 
 # Paths
-decryption_key_Aurus = f'{root_dir}/gpghome/aurus_decrypt_key.gpg'
-decryption_key_1010 = f'{root_dir}/gpghome/1010_decrypt_key.gpg'
+# decryption_key_Aurus = f'{root_dir}/gpghome/aurus_decrypt_key.gpg'
+# decryption_key_1010 = f'{root_dir}/gpghome/1010_decrypt_key.gpg'
 remote_1010_path = 'dollargeneral/1010/Historical'
 s3_staging_path = 'dollargeneral/transformed/history_staging'
 s3_gold_path = 'dollargeneral/transformed/history_gold'
 s3_tmp_path = 'dollargeneral/transformed/tmp'
 
 # Configuring gpg decrypter for Aurus & 1010
-def gpg_decrytion(decryption_key):
+def gpg_decrytion(decryption_key=None):
+    decryption_key_file = f'{root_dir}/gpghome/{decryption_key}'
+    download_s3_fileobj(bucket, object_name=f'dollargeneral/transformed/pgp/{decryption_key}',
+                        file_name=decryption_key_file)
     gpg_decrypt = gnupg.GPG(gnupghome=gnupghome)
     gpg_decrypt.encoding = 'utf-8'
-    with open(decryption_key, 'rb') as f:
+    with open(decryption_key_file, 'rb') as f:
         key_data = f.read()
     import_result = gpg_decrypt.import_keys(key_data)
     return gpg_decrypt
@@ -69,7 +73,7 @@ def process_1010(date_value=dt.datetime.now().strftime('%Y%m%d')):
     :param remote_1010_path: The S3 directory to download.
     :param local_Path: the local directory to download the files to.
     """
-    gpg_1010 = gpg_decrytion(decryption_key_1010)
+    gpg_1010 = gpg_decrytion('1010_decrypt_key.gpg')
     paginator = s3_client.get_paginator('list_objects')
 
     list_files = ['transactions', 'product', 'product_category', 'organization', 'tenders', 'transaction_item', 'trans_disc_xref', 'discounts']
@@ -147,9 +151,34 @@ def process_1010_files(result, gpg_1010, folder):
             except Exception as e:
                 logger.error(f'{e} Error in uploading {filename}')
 
+def download_s3_fileobj(bucket, object_name, file_name=None):
+    """Downlaod a binary file from an S3 bucket
+
+    :param file_name: File to download
+    :param bucket: Bucket to download to
+    :param object_name: S3 object name. If not specified then file_name is used
+    :return: True if file was uploaded, else False
+    """
+    logger.info(f"Copying file from s3://{bucket}/{object_name} to {file_name}")
+
+    # If S3 file_name was not specified, use object_name
+    if file_name is None:
+        file_name = object_name
+
+    # Download the file
+    try:
+        with open(file_name, 'wb') as f:
+            response = s3_client.download_fileobj(bucket, object_name, f)
+        logger.info(f"Copied file from s3://{bucket}/{object_name} to {file_name}")
+    except ClientError as e:
+        logging.error(e)
+        sys.exit(1)
+        return False
+    return True
+
 
 if __name__ == '__main__':
 
     # Download & Upload 1010 files from bridg-client-ftp to s3 transformed directory
     # for datecheck in ['20200901', '20200902', '20200901', '20200902', '20200901', '20200902', '20200901', '20201002', '20201001', '20201002']:
-    process_1010('201908')
+    process_1010('201906')
