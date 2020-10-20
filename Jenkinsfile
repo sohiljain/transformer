@@ -81,8 +81,9 @@ pipeline {
       }
       steps {
  	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
+          sh 'aws s3 cp src/main/emr_process_gold_daily.py s3://bridg-binary-registry/bridg-dollargeneral-transformer/'
+          sh 'aws s3 cp src/main/emr_process_gold_historical.py s3://bridg-binary-registry/bridg-dollargeneral-transformer/'
           sh 'aws s3 cp s3://bridg-devops-production/bin/deploy_bridg_service.py .'
-          sh 'aws s3 cp src/main/emr.py s3://bridg-devops-production/bin/deploy_bridg_service.py'
           sh 'python3 deploy_bridg_service.py'
       }
     }
