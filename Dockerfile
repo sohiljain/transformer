@@ -21,7 +21,7 @@ ENV PYTHONPATH "${PYTHONPATH}:/code/src"
 ENV ALERT_SNS_PARAM="/cdp/SNS/Alarm"
 
 COPY ./src .
-COPY ./gpghome .
+COPY gpghome .
 COPY gpghome/1010_decrypt_key.gpg ./gpghome/
 COPY gpghome/aurus_decrypt_key.gpg ./gpghome/
 
