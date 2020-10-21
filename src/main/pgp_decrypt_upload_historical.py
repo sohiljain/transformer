@@ -5,6 +5,7 @@ import datetime as dt
 import errno
 from botocore.exceptions import ClientError
 from io import StringIO
+from utils.secret import Secret
 
 # create logger
 logging.basicConfig(format='%(name)s:%(levelname)s:%(asctime)s:%(lineno)d: %(message)s', level=logging.INFO)
@@ -19,7 +20,7 @@ s3_client = boto3.client('s3')
 root_dir = '/code'
 session = boto3.Session()
 bucket = 'bridg-client-ftp'
-passphrase = 'z7$JP}Q)HC*@9YXY'
+passphrase = Secret("/cdp/SecretManager/dollargeneral-transformer/").get_passphrase()
 gnupghome = f'{root_dir}/gpghome/'
 local_Path = f'{root_dir}/Documents/DG'
 staging_copy_path = 'dollargeneral/transformed/history_archive'
