@@ -78,6 +78,9 @@ pipeline {
         	AWS_SECRET_ACCESS_KEY = credentials('aws-bridg2-secret')
         	DEPLOYMENT = 'production'
         	AWS_DEFAULT_REGION = 'us-west-2'
+        	S3_BUCKET_RAW_DATA_1 = 'bridg-ftp-client'
+        	SNS_TOPIC_ARN_1 = 'dollargeneral-transformer-lambda-sns'
+        	SNS_TOPIC_ARN_2 = 'dollargeneral-transformer-emr-sns'
       }
       steps {
  	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
