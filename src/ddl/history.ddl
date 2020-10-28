@@ -1,4 +1,4 @@
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_transaction_gold (
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_transaction_history_gold (
 SourceTransactionNumer string,
 SourceOrganizationNumber string,
 Total string,
@@ -15,9 +15,8 @@ CouponAmt string,
 POSDiscAmt string,
 ManufacturerCouponAmt string,
 RegisterNumber string,
-AccountNumberMasked string,
+Account_Number_Masked string,
 postransactionnumber string,
-dt string,
 checkid string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
@@ -27,11 +26,11 @@ WITH SERDEPROPERTIES (
   'collection.delim' = 'undefined',
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
-) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/gold/transactions'
+) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/history_gold/transactions'
 TBLPROPERTIES ('has_encrypted_data'='true');
 
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_tenders_gold
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_tenders_history_gold
 (
 	sourcecustomernumber string,
 	registernumber string,
@@ -46,8 +45,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_tenders_gold
 	tendername string,
 	tenderamt double,
 	accountnumbermasked string,
-	cardusagetype string,
-	dt string
+	cardusagetype string
  )ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
 WITH SERDEPROPERTIES (
   'serialization.format' = '|',
@@ -56,12 +54,12 @@ WITH SERDEPROPERTIES (
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
 )LOCATION
-  's3://bridg-client-ftp/dollargeneral/transformed/gold/tenders'
+  's3://bridg-client-ftp/dollargeneral/transformed/history_gold/tenders'
 TBLPROPERTIES (
   'has_encrypted_data'='true');
 
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_transaction_item_gold (
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_transaction_item_history_gold (
  sourcetransactionitemnumber string,
  sourcetransactionnumber string,
  sourceorganizationnumber INTEGER,
@@ -98,14 +96,14 @@ WITH SERDEPROPERTIES (
   'skip.header.line.count'='1'
 )
 LOCATION
-  's3://bridg-client-ftp/dollargeneral/transformed/gold/line_item'
+  's3://bridg-client-ftp/dollargeneral/transformed/history_gold/line_item'
 TBLPROPERTIES (
   'has_encrypted_data'='true',
   'transient_lastDdlTime'='1599234059')
 
 
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_discounts_gold(
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_discounts_history_gold(
     datecreated string,
 	sourcetransactionnumber string,
 	sourcetransactionitemnumber string,
@@ -127,27 +125,26 @@ WITH SERDEPROPERTIES (
   'collection.delim' = 'undefined',
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
-) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/gold/discounts'
+) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/history_gold/discounts'
 TBLPROPERTIES ('has_encrypted_data'='true');
 
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_organization_gold (
-SourceOrganizationNumberkey string,
-Name string,
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_organization_history_gold (
+SourceOrganizationNumber string,
+OrgName string,
 Status string,
 OrgType string,
 Subtype string,
 ParentSourceOrganizationNumber string,
 Country string,
-State string,
+OrgState string,
 City string,
-Addr_line_1 string,
-Addr_line_2 string,
+Address1 string,
+Address2 string,
 Zip string,
 ExcludeAsClosestStore string,
 DateCreated string,
-CustomAttributes string,
-dt string
+CustomAttributes string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
 WITH SERDEPROPERTIES (
@@ -156,13 +153,13 @@ WITH SERDEPROPERTIES (
   'collection.delim' = 'undefined',
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
-) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/gold/organization/'
+) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/history_gold/organization/'
 TBLPROPERTIES ('has_encrypted_data'='true');
 
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_gold (
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_history_gold (
 SourceProductNumber string,
-Name string,
+ProductName string,
 Description string,
 ProductURL string,
 ImageURL string,
@@ -175,12 +172,11 @@ SaleCondition string,
 Availability string,
 AvailableQty string,
 RecoStatus string,
-Size string,
+ProductSize string,
 Color string,
 SourceProductCategoryNumber string,
 DateCreated string,
 CustomAttributes string,
-dt string,
 Sourceproductcategoryname string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
@@ -190,17 +186,16 @@ WITH SERDEPROPERTIES (
   'collection.delim' = 'undefined',
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
-) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/gold/product/'
+) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/history_gold/product/'
 TBLPROPERTIES ('has_encrypted_data'='true');
 
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_category_gold (
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_category_history_gold (
 SourceCategoryNumber string,
-Name string,
+ProductCategoryName string,
 SourceParentCategoryNumber string,
 DateCreated string,
-CustomAttributes string,
-dt string
+CustomAttributes string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
 WITH SERDEPROPERTIES (
@@ -209,34 +204,13 @@ WITH SERDEPROPERTIES (
   'collection.delim' = 'undefined',
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
-) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/gold/product_category/'
+) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/history_gold/product_category/'
 TBLPROPERTIES ('has_encrypted_data'='true');
 
---STAGING
-
-create external table transformer.dg_aurus
-(
-	store_id integer,
-	transaction_id string,
-	store_transaction_date_time string,
-	host_transaction_date_time string,
-	customer_name string,
-	masked_card_number string,
-	approval_code string,
-	pos_transaction_number string,
-	approved_amount double,
-	pos_register_number integer
-) ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
-WITH SERDEPROPERTIES (
-  'serialization.format' = ',',
-  'field.delim' = ',',
-  "skip.header.line.count"="1"
-) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/staging/aurus/'
-TBLPROPERTIES ('has_encrypted_data'='false');
 
 -------------------ARCHIVE-----------------------------------
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_transaction_archive (
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_transaction_history_archive (
 SourceTransactionNumber string,
 SourceOrganizationNumber string,
 Total string,
@@ -253,7 +227,7 @@ CouponAmt string,
 POSDiscAmt string,
 ManufacturerCouponAmt string,
 RegisterNumber string,
-AccountNumberMasked string,
+Account_Number_Masked string,
 postransactionnumber string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
@@ -263,11 +237,11 @@ WITH SERDEPROPERTIES (
   'collection.delim' = 'undefined',
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
-) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/archive/transactions'
+) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/history_archive/transactions'
 TBLPROPERTIES ('has_encrypted_data'='true');
 
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_tenders_archive
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_tenders_history_archive
 (
 	sourcetransactionnumber BIGINT,
 	sourceorganizationnumber INTEGER,
@@ -285,11 +259,11 @@ WITH SERDEPROPERTIES (
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
 )LOCATION
-  's3://bridg-client-ftp/dollargeneral/transformed/archive/tenders'
+  's3://bridg-client-ftp/dollargeneral/transformed/history_archive/tenders'
 TBLPROPERTIES (
   'has_encrypted_data'='true');
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_transaction_item_archive(
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_transaction_item_history_archive(
  sourcetransactionitemnumber string,
  sourcetransactionnumber string,
  sourceorganizationnumber INTEGER,
@@ -323,14 +297,14 @@ WITH SERDEPROPERTIES (
   'skip.header.line.count'='1'
 )
 LOCATION
-  's3://bridg-client-ftp/dollargeneral/transformed/archive/transaction_item'
+  's3://bridg-client-ftp/dollargeneral/transformed/history_archive/transaction_item'
 TBLPROPERTIES (
   'has_encrypted_data'='true',
   'transient_lastDdlTime'='1599234059')
 
 
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_trans_disc_xref_archive (
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_trans_disc_xref_history_archive (
 SourceTransactionItemNumber string,
 DiscountCode string,
 DiscountAmt double
@@ -342,13 +316,13 @@ WITH SERDEPROPERTIES (
   'collection.delim' = 'undefined',
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
-) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/archive/trans_disc_xref'
+) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/history_archive/trans_disc_xref'
 TBLPROPERTIES ('has_encrypted_data'='true');
 
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_category(
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_category_history_archive(
   sourcecategorynumber string,
-  name string,
+  productcategoryname string,
   sourceparentcategorynumber string,
   datecreated string,
   customattributes string
@@ -361,28 +335,28 @@ WITH SERDEPROPERTIES (
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
 )LOCATION
-  's3://bridg-client-ftp/dollargeneral/transformed/archive/product_category'
+  's3://bridg-client-ftp/dollargeneral/transformed/history_archive/product_category'
 TBLPROPERTIES (
   'has_encrypted_data'='true',
   'transient_lastDdlTime'='1597982252')
 
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_organization_archive (
-SourceOrganizationNumberkey string,
-Name string,
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_organization_history_archive (
+SourceOrganizationNumber string,
+OrgName string,
 Status string,
 OrgType string,
 Subtype string,
 ParentSourceOrganizationNumber string,
 Country string,
-State string,
+OrgState string,
 City string,
-Addr_line_1 string,
-Addr_line_2 string,
+Address1 string,
+Address2 string,
 Zip string,
 ExcludeAsClosestStore string,
 DateCreated string,
-CustomAttributes string,
+CustomAttributes string
 )
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
 WITH SERDEPROPERTIES (
@@ -391,13 +365,13 @@ WITH SERDEPROPERTIES (
   'collection.delim' = 'undefined',
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
-) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/archive/organization/'
+) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/history_archive/organization/'
 TBLPROPERTIES ('has_encrypted_data'='true');
 
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_archive (
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_history_archive (
 SourceProductNumber string,
-Name string,
+ProductName string,
 Description string,
 ProductURL string,
 ImageURL string,
@@ -410,7 +384,7 @@ SaleCondition string,
 Availability string,
 AvailableQty string,
 RecoStatus string,
-Size string,
+ProductSize string,
 Color string,
 SourceProductCategoryNumber string,
 DateCreated string,
@@ -423,13 +397,13 @@ WITH SERDEPROPERTIES (
   'collection.delim' = 'undefined',
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
-) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/archive/product'
+) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/history_archive/product'
 TBLPROPERTIES ('has_encrypted_data'='true');
 
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_category_archive (
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_product_category_history_archive (
 SourceCategoryNumber string,
-Name string,
+ProductCategoryName string,
 SourceParentCategoryNumber string,
 DateCreated string,
 CustomAttributes string
@@ -441,10 +415,11 @@ WITH SERDEPROPERTIES (
   'collection.delim' = 'undefined',
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
-) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/archive/product_category/'
+) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/history_archive/product_category/'
 TBLPROPERTIES ('has_encrypted_data'='true');
 
-CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_discounts_archive(
+
+CREATE EXTERNAL TABLE IF NOT EXISTS transformer.dg_discounts_history_archive(
   discountcode string,
   discountdescription string,
   discounttype string
@@ -456,5 +431,6 @@ WITH SERDEPROPERTIES (
   'collection.delim' = 'undefined',
   'mapkey.delim' = 'undefined',
   "skip.header.line.count"="1"
-) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/archive/discounts'
+) LOCATION 's3://bridg-client-ftp/dollargeneral/transformed/history_archive/discounts'
 TBLPROPERTIES ('has_encrypted_data'='true');
+

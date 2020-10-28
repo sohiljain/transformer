@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 
 # from utils.utils import send_sns_alert
 
-error_subject = "BDL: Secret Retrieval Failure"
+error_subject = "Transformer: Secret Retrieval Failure"
 
 def send_sns_alert(subject, error_message):
     pass

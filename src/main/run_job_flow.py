@@ -109,14 +109,14 @@ cluster_id = connection.run_job_flow(
                 'Name': "Slave nodes",
                 'Market': 'ON_DEMAND',
                 'InstanceRole': 'CORE',
-                'InstanceType': 'm5.2xlarge',
-                'InstanceCount': 3,
+                'InstanceType': 'r5.large',
+                'InstanceCount': 1,
                 'EbsConfiguration': {
                     'EbsBlockDeviceConfigs': [
                         {
                             'VolumeSpecification': {
                                 'VolumeType': 'gp2',
-                                'SizeInGB': 20
+                                'SizeInGB': 100
                             },
                             'VolumesPerInstance': 1
                         },
@@ -128,14 +128,14 @@ cluster_id = connection.run_job_flow(
                 'Name': "Slave nodes",
                 'Market': 'ON_DEMAND',
                 'InstanceRole': 'TASK',
-                'InstanceType': 'm5.2xlarge',
-                'InstanceCount': 2,
+                'InstanceType': 'r5.large',
+                'InstanceCount': 1,
                 'EbsConfiguration': {
                     'EbsBlockDeviceConfigs': [
                         {
                             'VolumeSpecification': {
                                 'VolumeType': 'gp2',
-                                'SizeInGB': 150
+                                'SizeInGB': 100
                             },
                             'VolumesPerInstance': 1
                         },
