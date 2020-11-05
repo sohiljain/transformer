@@ -10,8 +10,8 @@ s3_gold_path: dollargeneral/transformed/gold
 s3_archive_path: dollargeneral/transformed/archive
 remote_1010_path: dollargeneral/1010/Daily
 remote_Aurus_path: dollargeneral/Aurus/Daily
-root_dir: /Users/sjain/PycharmProjects/bridg-dollargeneral-transformer #/code
-gnupghome: /Users/sjain/PycharmProjects/bridg-dollargeneral-transformer/gpghome #/code/gpghome
+root_dir: /code
+gnupghome: /code/gpghome
 local_Path: /Users/sjain/PycharmProjects/bridg-dollargeneral-transformer/Documents/DG #/code/Documents/DG
 secret: /cdp/SecretManager/dollargeneral-transformer/
 

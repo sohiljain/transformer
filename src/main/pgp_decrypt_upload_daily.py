@@ -1,3 +1,6 @@
+# Copyright (c) 2020 Bridg Inc. All rights reserved.
+# @author Sohil Jain <sohil.jain@bridg.com>
+
 import boto3
 import gnupg
 import os, logging, sys
@@ -120,7 +123,7 @@ if __name__ == '__main__':
     args = my_parser.parse_args()
     args_dt = args.date or dt.datetime.now().strftime('%Y%m%d')
 
-    with open('../../config/transformer.yml', 'r') as yml_file:
+    with open('../config/transformer.yml', 'r') as yml_file:
         cfg = yaml.safe_load(yml_file)
 
     table_list = cfg.get('table_list', '')

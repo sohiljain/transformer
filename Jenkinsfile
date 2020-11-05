@@ -40,7 +40,7 @@ pipeline {
       steps {
  	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
           sh 'aws s3 cp s3://bridg-devops-development/bin/deploy_bridg_service.py .'
-          sh 'aws s3 cp src s3://bridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
+          sh 'aws s3 cp src s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
           sh 'python3 deploy_bridg_service.py'
       }
     }
@@ -57,30 +57,6 @@ pipeline {
         	AWS_SECRET_ACCESS_KEY = credentials('aws-bridg2-secret')
         	DEPLOYMENT = 'production'
         	AWS_DEFAULT_REGION = 'us-west-2'
-      }
-      steps {
- 	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
-          sh 'aws s3 cp s3://bridg-devops-production/bin/deploy_bridg_service.py .'
-          sh 'aws s3 cp src s3://bridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
-          sh 'python3 deploy_bridg_service.py'
-      }
-    }
-
-    stage('Deploy CDP to DG TRANSFORMER Test') {
-      when {
-        allOf {
-          branch "onb-394"
-          expression { params.DEPLOY_DG_TRANSFORMER_TO_TESTING }
-        }
-      }
-      environment {
-        	AWS_ACCESS_KEY_ID = credentials('aws-bridg2-id')
-        	AWS_SECRET_ACCESS_KEY = credentials('aws-bridg2-secret')
-        	DEPLOYMENT = 'production'
-        	AWS_DEFAULT_REGION = 'us-west-2'
-        	S3_BUCKET_RAW_DATA_1 = 'bridg-ftp-client'
-        	SNS_TOPIC_ARN_1 = 'dollargeneral-transformer-lambda-sns'
-        	SNS_TOPIC_ARN_2 = 'dollargeneral-transformer-emr-sns'
       }
       steps {
  	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
