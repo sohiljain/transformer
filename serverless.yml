@@ -22,17 +22,17 @@ custom:
   BRIDG_CONFIG_URL: ${env:BRIDG_CONFIG_URL}
   BRIDG_1_ACCOUNT: ${env:BRIDG_1_ACCOUNT}
   S3_BUCKET_RAW_DATA_1: ${env:S3_BUCKET_RAW_DATA_1} # Name not ARN
-  SNS_TOPIC_ARN_1: dollargeneral-transformer-lambda-sns
-#  SNS_TOPIC_ARN_2: dollargeneral-transformer-emr-sns
-  security_group: ${env:SECURITY_GROUP, 'sg-0710b844e08d5cb2e'}  # Shall this remain same
+  SNS_TOPIC_ARN_1: ${env:SNS_TOPIC_ARN_1}
+  SNS_TOPIC_ARN_2: ${env:SNS_TOPIC_ARN_2}
+  security_group: ${env:SECURITY_GROUP, 'sg-0710b844e08d5cb2e'}
   SUBNET_A: ${env:SUBNET_A, 'subnet-051cad2b010989d3a'}
   SUBNET_B: ${env:SUBNET_B, 'subnet-06d4b6a3c6e279276'}
   SUBNET_C: ${env:SUBNET_C, 'subnet-08f6d84463db5e1f8'}
 
 provider:
   name: aws
-  stage: ${opt:stage,'dev'}  # ?
   runtime: python3.8
+  stage: ${opt:stage,'dev'}
   cfLogs: true
   description: 'AWS Lambda function performing dollar-general transformation step'
   memorySize: 512 # Overwrite the default memory size. Default is 1024.
@@ -40,7 +40,7 @@ provider:
   region: ${self:custom.AWS_REGION}
   versionFunctions: false
   deploymentBucket: ${env:BRIDG_ENV_NAME}.com.serverless.${self:custom.AWS_REGION}.deploys
-  role: cdp-dollargeneral-transformer-role
+  role: dGTransformerRole
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -48,7 +48,7 @@ provider:
         - "ec2:DescribeNetworkInterfaces"
         - "ec2:DetachNetworkInterface"
         - "ec2:DeleteNetworkInterface"
-      Resource: "arn:aws:ec2:us-east-1:*:*"
+      Resource: "arn:aws:ec2:${self:custom.AWS_REGION}:*:*"
   vpc:
     securityGroupIds:
       - ${self:custom.security_group}
@@ -62,10 +62,10 @@ provider:
 
 resources:
   Resources:
-    DGTransformerRole:
+    dGTransformerRole:
       Type: "AWS::IAM::Role"
       Properties:
-        RoleName: cdp-dg-transformer-role
+        RoleName: dGTransformerLambdaRole-${opt:stage}
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -78,7 +78,7 @@ resources:
 #        ManagedPolicyArns:
 #          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         Policies:
-          - PolicyName: DGTransformerSchedulerPolicy
+          - PolicyName: dGTransformerSchedulerPolicy
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
@@ -88,12 +88,12 @@ resources:
                     - logs:CreateLogStream
                     - logs:PutLogEvents
                     - logs:GetLogEvents
-                  Resource: "arn:aws:logs:us-east-1:*:log-group:/aws/lambda/*:*:*"
+                  Resource: "arn:aws:logs:${self:custom.AWS_REGION}:*:log-group:/aws/lambda/*:*:*"
                 - Effect: Allow
                   Action:
                     - lambda:InvokeFunction
                     - lambda:GetFunction
-                  Resource: "arn:aws:lambda:us-east-1:*:function:${self:custom.function_name.${self:provider.stage}}"
+                  Resource: "arn:aws:lambda:${self:custom.AWS_REGION}:*:function:${self:custom.function_name.${self:provider.stage}}"
                 - Effect: Allow
                   Action:
                     - events:*
@@ -102,26 +102,25 @@ resources:
                   Action:
                     - s3:*
                   Resource:
+                    - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}/*"
                     - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}"
                 - Effect: Allow
                   Action:
                     - sqs:SendMessage
-                  Resource: "arn:aws:sqs:us-east-1:*:dg-transformer-dead-letter-queue"
+                  Resource: "arn:aws:sqs:${self:custom.AWS_REGION}:*:${self:custom.DEAD_LETTER_QUEUE}"
     SQSQueueDeadLetter:
       Type: "AWS::SQS::Queue"
       Properties:
-        QueueName: dg-transformer-dead-letter-queue
+        QueueName: ${self:custom.DEAD_LETTER_QUEUE}
         MessageRetentionPeriod: 1209600
-    DGTransformerLambdaFunction: # ? - Don't get this
+    DGTransformerLambdaFunction:
       Type: "AWS::Lambda::Function"
       Properties:
-        FunctionName: dg-transformer-lambda
         DeadLetterConfig:
           TargetArn:
             "Fn::GetAtt":
               - SQSQueueDeadLetter
               - Arn
-
     DGTransformerLambdaPermissionRawdata1S3:
       # We must create this add permission after creating the function.
       # This is necessary for function to be invokable via cloudwatch event
@@ -146,7 +145,6 @@ functions:
     handler: dg_transformer_handler
     events:
       - sns: ${self:custom.SNS_TOPIC_ARN_1}
-#      - sns: ${self:custom.SNS_TOPIC_ARN_2}
     environment:
       BRIDG_ENV_NAME: ${self:custom.BRIDG_ENV_NAME}
       BRIDG_CONFIG_URL: ${self:custom.BRIDG_CONFIG_URL}
