@@ -6,6 +6,9 @@ pipeline {
     booleanParam(name: "DEPLOY_DG_TRANSFORMER_TO_PRODUCTION",
                  description: "Deploys DG TRANSFORMER to Production",
                  defaultValue: false)
+    booleanParam(name: "DEPLOY_DG_TRANSFORMER_TO_TESTING",
+                 description: "Deploys DG TRANSFORMER to Testing",
+                 defaultValue: false)
     }
 
   agent any
@@ -37,6 +40,7 @@ pipeline {
       steps {
  	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
           sh 'aws s3 cp s3://bridg-devops-development/bin/deploy_bridg_service.py .'
+          sh 'aws s3 cp src s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
           sh 'python3 deploy_bridg_service.py'
       }
     }
@@ -57,9 +61,11 @@ pipeline {
       steps {
  	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
           sh 'aws s3 cp s3://bridg-devops-production/bin/deploy_bridg_service.py .'
+          sh 'aws s3 cp src s3://bridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
           sh 'python3 deploy_bridg_service.py'
       }
     }
+
   }
 
   post {

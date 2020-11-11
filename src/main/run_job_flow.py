@@ -11,15 +11,14 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # EMR file upload to s3 bucket
-s3_resource = boto3.resource('s3', aws_access_key_id='xxxxx',
-                             aws_secret_access_key='yyyyyy')
-s3_client = boto3.client('s3', aws_access_key_id='xxxxx',
-                         aws_secret_access_key='yyyyyy')
+s3_resource = boto3.resource('s3')
+s3_client = boto3.client('s3')
 
 bucket = 'bridg-client-ftp'
 root_dir = '/code'
-emr_local_path = f'{root_dir}/main/emr_process_gold_historical.py'
-emr_upload_path = 'dollargeneral/emr_code/emr_process_gold_historical.py'
+emr_local_path = f'{root_dir}/main/emr_process_gold_daily.py'
+emr_upload_path = 'dollargeneral/emr_code/emr_process_gold_daily.py'
+# emr_upload_path = 'bridg-binary-registry/bridg-dollargeneral-transformer/emr_process_gold_daily.py'
 
 #today's date
 from datetime import datetime
@@ -49,7 +48,6 @@ def upload_file(file_name, bucket, object_name=None):
         sys.exit(1)
         return False
     return True
-
 
 upload_file(file_name=emr_local_path, bucket=bucket, object_name=emr_upload_path)
 
@@ -111,14 +109,14 @@ cluster_id = connection.run_job_flow(
                 'Name': "Slave nodes",
                 'Market': 'ON_DEMAND',
                 'InstanceRole': 'CORE',
-                'InstanceType': 'm5.xlarge',
+                'InstanceType': 'r5.large',
                 'InstanceCount': 1,
                 'EbsConfiguration': {
                     'EbsBlockDeviceConfigs': [
                         {
                             'VolumeSpecification': {
                                 'VolumeType': 'gp2',
-                                'SizeInGB': 20
+                                'SizeInGB': 100
                             },
                             'VolumesPerInstance': 1
                         },
@@ -130,14 +128,14 @@ cluster_id = connection.run_job_flow(
                 'Name': "Slave nodes",
                 'Market': 'ON_DEMAND',
                 'InstanceRole': 'TASK',
-                'InstanceType': 'm5.4xlarge',
-                'InstanceCount': 2,
+                'InstanceType': 'r5.large',
+                'InstanceCount': 1,
                 'EbsConfiguration': {
                     'EbsBlockDeviceConfigs': [
                         {
                             'VolumeSpecification': {
                                 'VolumeType': 'gp2',
-                                'SizeInGB': 40
+                                'SizeInGB': 100
                             },
                             'VolumesPerInstance': 1
                         },
@@ -147,7 +145,7 @@ cluster_id = connection.run_job_flow(
             }
         ],
         'Ec2KeyName': 'cdp-admin',
-        'KeepJobFlowAliveWhenNoSteps': True,
+        'KeepJobFlowAliveWhenNoSteps': False,
         'TerminationProtected': False,
         'Ec2SubnetId': 'subnet-080ca4bae7f28e8a9',
     },
