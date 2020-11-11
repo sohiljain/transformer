@@ -36,6 +36,16 @@ pipeline {
         	AWS_SECRET_ACCESS_KEY = credentials('shared-aws-secret-access-key')
         	DEPLOYMENT = 'development'
         	AWS_DEFAULT_REGION = 'us-west-2'
+        	S3_BUCKET_RAW_DATA_1 = 'bridg-ftp-client'
+        	SNS_TOPIC_ARN_1 = 'dollargeneral-transformer-lambda-sns'
+        	SNS_TOPIC_ARN_2 = 'dollargeneral-transformer-emr-sns'
+        	BRIDG_ENV_NAME = 'dev-cdp'
+        	BRIDG_CONFIG_URL = 'http://config.dev-cdp.towerbridg.com/'
+        	BRIDG_1_ACCOUNT = credentials('bridg1-account-id')
+        	SUBNET_A = 'subnet-051cad2b010989d3a'
+            SUBNET_B = 'subnet-06d4b6a3c6e279276'
+            SUBNET_C = 'subnet-08f6d84463db5e1f8'
+            SECURITY_GROUP = 'sg-0710b844e08d5cb2e'
       }
       steps {
  	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
@@ -57,6 +67,16 @@ pipeline {
         	AWS_SECRET_ACCESS_KEY = credentials('aws-bridg2-secret')
         	DEPLOYMENT = 'production'
         	AWS_DEFAULT_REGION = 'us-west-2'
+        	S3_BUCKET_RAW_DATA_1 = 'bridg-ftp-client'
+        	SNS_TOPIC_ARN_1 = 'dollargeneral-transformer-lambda-sns'
+        	SNS_TOPIC_ARN_2 = 'dollargeneral-transformer-emr-sns'
+        	BRIDG_ENV_NAME = 'cdp'
+        	BRIDG_CONFIG_URL = 'http://config.dev-cdp.towerbridg.com/'
+        	BRIDG_1_ACCOUNT = credentials('bridg1-account-id')
+        	SUBNET_A = 'subnet-051cad2b010989d3a'
+            SUBNET_B = 'subnet-06d4b6a3c6e279276'
+            SUBNET_C = 'subnet-08f6d84463db5e1f8'
+            SECURITY_GROUP = 'sg-0710b844e08d5cb2e'
       }
       steps {
  	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
