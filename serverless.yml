@@ -47,6 +47,7 @@ provider:
         - "ec2:CreateNetworkInterface"
         - "ec2:DescribeNetworkInterfaces"
         - "ec2:DetachNetworkInterface"
+        - "ec2:AttachNetworkInterface"
         - "ec2:DeleteNetworkInterface"
       Resource: "arn:aws:ec2:${self:custom.AWS_REGION}:*:*"
   vpc:
