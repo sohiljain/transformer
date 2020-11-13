@@ -1,0 +1,152 @@
+# Copyright (c) 2020 Bridg Inc. All rights reserved.
+# @author Sohil Jain <sohil.jain@bridg.com>
+
+##
+# This file defines the serverless infrastructure on AWS for a Lambda function performing a data ingestion as a part of
+# 'Dollar-general Transformer' data pipeline.
+###
+service: bridg-dg-transformer-function
+description: 'AWS Lambda function performing dollar general data transformation step of "Data Pipeline"'
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+custom:
+  stages:
+    - development
+    - production
+  function_name:
+    dev: bridg-dg-transformer
+    prod: bridg-dg-transformer
+  AWS_REGION: ${env:AWS_DEFAULT_REGION}
+  DEAD_LETTER_QUEUE: ${self:custom.function_name.${self:provider.stage}}-dead-letter-queue
+  BRIDG_ENV_NAME: ${env:BRIDG_ENV_NAME, dev-cdp}
+  BRIDG_CONFIG_URL: ${env:BRIDG_CONFIG_URL}
+  BRIDG_1_ACCOUNT: ${env:BRIDG_1_ACCOUNT}
+  S3_BUCKET_RAW_DATA_1: ${env:S3_BUCKET_RAW_DATA_1} # Name not ARN
+  SNS_TOPIC_ARN_1: ${env:SNS_TOPIC_ARN_1}
+  SNS_TOPIC_ARN_2: ${env:SNS_TOPIC_ARN_2}
+  security_group: ${env:SECURITY_GROUP, 'sg-0710b844e08d5cb2e'}
+  SUBNET_A: ${env:SUBNET_A, 'subnet-051cad2b010989d3a'}
+  SUBNET_B: ${env:SUBNET_B, 'subnet-06d4b6a3c6e279276'}
+  SUBNET_C: ${env:SUBNET_C, 'subnet-08f6d84463db5e1f8'}
+
+provider:
+  name: aws
+  runtime: python3.8
+  stage: ${opt:stage,'dev'}
+  cfLogs: true
+  description: 'AWS Lambda function performing dollar-general transformation step'
+  memorySize: 512 # Overwrite the default memory size. Default is 1024.
+  timeout: 600 # The default is 6
+  region: ${self:custom.AWS_REGION}
+  versionFunctions: false
+  deploymentBucket: ${env:BRIDG_ENV_NAME}.com.serverless.${self:custom.AWS_REGION}.deploys
+  role: dGTransformerRole
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "ec2:CreateNetworkInterface"
+        - "ec2:DescribeNetworkInterfaces"
+        - "ec2:DetachNetworkInterface"
+        - "ec2:DeleteNetworkInterface"
+      Resource: "arn:aws:ec2:${self:custom.AWS_REGION}:*:*"
+  vpc:
+    securityGroupIds:
+      - ${self:custom.security_group}
+    subnetIds:
+      - ${self:custom.SUBNET_A}
+      - ${self:custom.SUBNET_B}
+      - ${self:custom.SUBNET_C}
+
+#package: Don't need this for now. We'll include a python zip/egg later if required
+  artifact: dollargeneral_lambda.zip
+
+resources:
+  Resources:
+    dGTransformerRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: dGTransformerLambdaRole-${opt:stage}
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+                  - events.amazonaws.com
+              Action: sts:AssumeRole
+#        ManagedPolicyArns:
+#          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        Policies:
+          - PolicyName: dGTransformerSchedulerPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow # note that these rights are given in the default policy and are required if you want logs out of your lambda(s)
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                    - logs:GetLogEvents
+                  Resource: "arn:aws:logs:${self:custom.AWS_REGION}:*:log-group:/aws/lambda/*:*:*"
+                - Effect: Allow
+                  Action:
+                    - lambda:InvokeFunction
+                    - lambda:GetFunction
+                  Resource: "arn:aws:lambda:${self:custom.AWS_REGION}:*:function:${self:custom.function_name.${self:provider.stage}}"
+                - Effect: Allow
+                  Action:
+                    - events:*
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - s3:*
+                  Resource:
+                    - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}/*"
+                    - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}"
+                - Effect: Allow
+                  Action:
+                    - sqs:SendMessage
+                  Resource: "arn:aws:sqs:${self:custom.AWS_REGION}:*:${self:custom.DEAD_LETTER_QUEUE}"
+    SQSQueueDeadLetter:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:custom.DEAD_LETTER_QUEUE}
+        MessageRetentionPeriod: 1209600
+    DGTransformerLambdaFunction:
+      Type: "AWS::Lambda::Function"
+      Properties:
+        DeadLetterConfig:
+          TargetArn:
+            "Fn::GetAtt":
+              - SQSQueueDeadLetter
+              - Arn
+    DGTransformerLambdaPermissionRawdata1S3:
+      # We must create this add permission after creating the function.
+      # This is necessary for function to be invokable via cloudwatch event
+      # Read to Make sure:: https://github.com/aws/aws-sdk-java/issues/737
+      DependsOn:
+        - DGTransformerLambdaFunction
+      Type: "AWS::Lambda::Permission"
+      Properties:
+        Action: "lambda:InvokeFunction"
+        FunctionName:
+          "Fn::GetAtt":
+            - DGTransformerLambdaFunction
+            - Arn
+        Principal: "sns.amazonaws.com"
+        SourceAccount: ${self:custom.BRIDG_1_ACCOUNT}
+        SourceArn: ${self:custom.SNS_TOPIC_ARN_1}
+
+functions:
+  DGTransformer:
+    name: ${self:custom.function_name.${self:provider.stage}}
+    description: "AWS Lambda function performing dollar generaal transformation step of 'Data Pipeline'."
+    handler: dg_transformer_handler
+    events:
+      - sns: ${self:custom.SNS_TOPIC_ARN_1}
+    environment:
+      BRIDG_ENV_NAME: ${self:custom.BRIDG_ENV_NAME}
+      BRIDG_CONFIG_URL: ${self:custom.BRIDG_CONFIG_URL}
+    tags:
+      Environment: ${self:custom.BRIDG_ENV_NAME}
