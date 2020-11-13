@@ -58,7 +58,7 @@ provider:
       - ${self:custom.SUBNET_B}
       - ${self:custom.SUBNET_C}
 
-#package: Don't need this for now. We'll include a python zip/egg later if required
+package:
   artifact: dg_transformer_prepare.zip
 
 resources:
