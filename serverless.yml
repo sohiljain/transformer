@@ -18,7 +18,7 @@ custom:
     prod: bridg-dg-transformer
   AWS_REGION: ${env:AWS_DEFAULT_REGION}
   DEAD_LETTER_QUEUE: ${self:custom.function_name.${self:provider.stage}}-dead-letter-queue
-  BRIDG_ENV_NAME: ${env:BRIDG_ENV_NAME, dev-cdp}
+  BRIDG_ENV_NAME: ${env:BRIDG_ENV_NAME}
   BRIDG_CONFIG_URL: ${env:BRIDG_CONFIG_URL}
   BRIDG_1_ACCOUNT: ${env:BRIDG_1_ACCOUNT}
   S3_BUCKET_RAW_DATA_1: ${env:S3_BUCKET_RAW_DATA_1} # Name not ARN
@@ -32,7 +32,7 @@ custom:
 provider:
   name: aws
   runtime: python3.8
-  stage: ${opt:stage,'dev'}
+  stage: ${opt:stage}
   cfLogs: true
   description: 'AWS Lambda function performing dollar-general transformation step'
   memorySize: 512 # Overwrite the default memory size. Default is 1024.
