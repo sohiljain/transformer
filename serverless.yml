@@ -139,7 +139,7 @@ resources:
         SourceArn: ${self:custom.SNS_TOPIC_ARN_1}
 
 functions:
-  CopyToDataLake:
+  DGTransformer:
     name: ${self:custom.function_name.${self:provider.stage}}
     description: "AWS Lambda function performing dollar generaal transformation step of 'Data Pipeline'."
     handler: dg_transformer_handler
