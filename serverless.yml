@@ -58,7 +58,7 @@ provider:
       - ${self:custom.SUBNET_C}
 
 #package: Don't need this for now. We'll include a python zip/egg later if required
-  artifact: dollargeneral_lambda.zip
+  artifact: dg_transformer_prepare.zip
 
 resources:
   Resources:
@@ -142,7 +142,7 @@ functions:
   DGTransformer:
     name: ${self:custom.function_name.${self:provider.stage}}
     description: "AWS Lambda function performing dollar generaal transformation step of 'Data Pipeline'."
-    handler: dg_transformer_handler
+    handler: lambda_trigger_batch.lambda_handler
     events:
       - sns: ${self:custom.SNS_TOPIC_ARN_1}
     environment:
