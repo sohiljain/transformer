@@ -35,7 +35,7 @@ provider:
   stage: ${opt:stage}
   cfLogs: true
   description: 'AWS Lambda function performing dollar-general transformation step'
-  memorySize: 512 # Overwrite the default memory size. Default is 1024.
+  memorySize: 512
   timeout: 600 # The default is 6
   region: ${self:custom.AWS_REGION}
   versionFunctions: false
@@ -65,6 +65,7 @@ resources:
   Resources:
     dGTransformerRole:
       Type: "AWS::IAM::Role"
+      DeletionPolicy: Delete
       Properties:
         RoleName: dGTransformerLambdaRole-${opt:stage}
         AssumeRolePolicyDocument:
@@ -76,8 +77,8 @@ resources:
                   - lambda.amazonaws.com
                   - events.amazonaws.com
               Action: sts:AssumeRole
-#        ManagedPolicyArns:
-#          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         Policies:
           - PolicyName: dGTransformerSchedulerPolicy
             PolicyDocument:
@@ -105,39 +106,6 @@ resources:
                   Resource:
                     - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}/*"
                     - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}"
-                - Effect: Allow
-                  Action:
-                    - sqs:SendMessage
-                  Resource: "arn:aws:sqs:${self:custom.AWS_REGION}:*:${self:custom.DEAD_LETTER_QUEUE}"
-    SQSQueueDeadLetter:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: ${self:custom.DEAD_LETTER_QUEUE}
-        MessageRetentionPeriod: 1209600
-    DGTransformerLambdaFunction:
-      Type: "AWS::Lambda::Function"
-      Properties:
-        DeadLetterConfig:
-          TargetArn:
-            "Fn::GetAtt":
-              - SQSQueueDeadLetter
-              - Arn
-    DGTransformerLambdaPermissionRawdata1S3:
-      # We must create this add permission after creating the function.
-      # This is necessary for function to be invokable via cloudwatch event
-      # Read to Make sure:: https://github.com/aws/aws-sdk-java/issues/737
-      DependsOn:
-        - DGTransformerLambdaFunction
-      Type: "AWS::Lambda::Permission"
-      Properties:
-        Action: "lambda:InvokeFunction"
-        FunctionName:
-          "Fn::GetAtt":
-            - DGTransformerLambdaFunction
-            - Arn
-        Principal: "sns.amazonaws.com"
-        SourceAccount: ${self:custom.BRIDG_1_ACCOUNT}
-        SourceArn: ${self:custom.SNS_TOPIC_ARN_1}
 
 functions:
   DGTransformer:
