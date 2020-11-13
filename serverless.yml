@@ -59,7 +59,7 @@ provider:
       - ${self:custom.SUBNET_C}
 
 package:
-  artifact: dg_transformer_prepare.zip
+  artifact: build/dg_transformer_prepare.zip
 
 resources:
   Resources:
