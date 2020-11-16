@@ -8,7 +8,6 @@ import datetime as dt
 import yaml
 import argparse
 from utils.secret import Secret
-from utils.config import EtlConfig
 from utils.utils import download_s3_fileobj, copy_staging_files,assert_file_exists, gpg_decrytion
 
 # create logger
@@ -141,8 +140,10 @@ if __name__ == '__main__':
     passphrase = Secret(secret_name).get_passphrase()
 
     # Download & Upload Aurus files from bridg-client-ftp to s3 transformed directory
-    process_aurus(args_dt)
+    for date_arg in args_dt.split(','):
+        process_aurus(date_arg)
 
     # Download & Upload 1010 files from bridg-client-ftp to s3 transformed directory
-    process_1010(args_dt)
+    for date_arg in args_dt.split(','):
+        process_1010(date_arg)
 
