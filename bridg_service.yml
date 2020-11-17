@@ -3,8 +3,8 @@ production:
   type: batch
   command:
   environmentName: cdp
-  cpu: 4
-  memory: 64000
+  cpu: 2
+  memory: 10000
   taskRole: /cdp/Services/dg-transformer/taskRole
   environmentalVariables:
   - Name: ALERT_SNS_PARAM

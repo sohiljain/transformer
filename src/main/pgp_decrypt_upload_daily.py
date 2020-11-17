@@ -118,11 +118,14 @@ def process_1010(date_value=dt.datetime.now().strftime('%Y%m%d')):
 if __name__ == '__main__':
 
     my_parser = argparse.ArgumentParser(description='Starting transformer decrypt pipeline')
-    my_parser.add_argument('--date', metavar='', type=str, help='Date', required=False, default=None)
+    my_parser.add_argument('--date', metavar='', type=str, help='Date', required=False, default=dt.datetime.now().strftime('%Y%m%d'))
+    my_parser.add_argument('--root-dir', type=str, help='Root Directory of project', required=False, default='/code')
     args = my_parser.parse_args()
-    args_dt = args.date or dt.datetime.now().strftime('%Y%m%d')
+    args_dt = args.date
+    root_dir = args.root_dir
+    logger.info(f'Root directory has been set as {root_dir}')
 
-    with open('../config/transformer.yml', 'r') as yml_file:
+    with open(f'{root_dir}/config/transformer.yml', 'r') as yml_file:
         cfg = yaml.safe_load(yml_file)
 
     table_list = cfg.get('table_list', '')
@@ -133,17 +136,13 @@ if __name__ == '__main__':
     s3_archive_path = cfg.get('s3_archive_path', '')
     remote_1010_path = cfg.get('remote_1010_path','')
     remote_Aurus_path = cfg.get('remote_Aurus_path','')
-    root_dir = cfg.get('root_dir','')
     local_Path = cfg.get('local_Path','')
     gnupghome = cfg.get('gnupghome','')
     secret_name = cfg.get('secret', '')
     passphrase = Secret(secret_name).get_passphrase()
 
-    # Download & Upload Aurus files from bridg-client-ftp to s3 transformed directory
+    # Download & Upload Aurus/1010 files from bridg-client-ftp to s3 transformed directory
     for date_arg in args_dt.split(','):
+        logger.info(f'Starting process for date - {args_dt}')
         process_aurus(date_arg)
-
-    # Download & Upload 1010 files from bridg-client-ftp to s3 transformed directory
-    for date_arg in args_dt.split(','):
         process_1010(date_arg)
-
