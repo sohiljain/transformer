@@ -107,9 +107,21 @@ resources:
                     - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}/*"
                     - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}"
                 - Effect: Allow
+                  Action: batch:SubmitJob
+                  Resource:
+                    - arn:aws:batch:us-west-2:596832493770:job-definition/cdp-dg-transformer:*
+                    - arn:aws:batch:us-west-2:596832493770:job-queue/cdp-que
+                - Effect: Allow
                   Action:
-                    - batch:SubmitJob
+                    - batch:DescribeJobQueues
+                    - batch:DescribeJobs
+                    - batch:DescribeJobDefinitions
+                    - batch:ListJobs
+                  Resource: "*"
+                - Effect: Allow
+                  Action: batch:SubmitJob
                   Resource: "arn:aws:batch:*:*:*"
+
 
 functions:
   DollarGeneralTransformer:
