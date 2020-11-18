@@ -106,6 +106,10 @@ resources:
                   Resource:
                     - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}/*"
                     - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}"
+                - Effect: Allow
+                  Action:
+                    - batch:SubmitJob
+                  Resource: "arn:aws:batch:*:*:*"
 
 functions:
   DollarGeneralTransformer:
