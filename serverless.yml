@@ -80,7 +80,7 @@ resources:
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         Policies:
-          - PolicyName: DGTransformerSchedulerPolicy
+          - PolicyName: DollarGeneralTransformerSchedulerPolicy
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
