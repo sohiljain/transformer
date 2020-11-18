@@ -40,7 +40,7 @@ provider:
   region: ${self:custom.AWS_REGION}
   versionFunctions: false
   deploymentBucket: ${env:BRIDG_ENV_NAME}.com.serverless.${self:custom.AWS_REGION}.deploys
-  role: DGTransformerRole
+  role: DollarGeneralTransformerRole
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -63,11 +63,11 @@ package:
 
 resources:
   Resources:
-    DGTransformerRole:
+    DollarGeneralTransformerRole:
       Type: "AWS::IAM::Role"
       DeletionPolicy: Delete
       Properties:
-        RoleName: DGTransformerLambdaRole-${opt:stage}
+        RoleName: DollarGeneralTransformerLambdaRole-${opt:stage}
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
           Statement:
