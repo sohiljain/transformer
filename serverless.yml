@@ -108,7 +108,7 @@ resources:
                     - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}"
 
 functions:
-  DGTransformer:
+  DollarGeneralTransformer:
     name: ${self:custom.function_name.${self:provider.stage}}
     description: "AWS Lambda function performing dollar generaal transformation step of 'Data Pipeline'."
     handler: main.lambda_trigger_batch.lambda_handler
