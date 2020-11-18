@@ -40,7 +40,7 @@ provider:
   region: ${self:custom.AWS_REGION}
   versionFunctions: false
   deploymentBucket: ${env:BRIDG_ENV_NAME}.com.serverless.${self:custom.AWS_REGION}.deploys
-  role: dGTransformerRole
+  role: DGTransformerRole
   iamRoleStatements:
     - Effect: "Allow"
       Action:
