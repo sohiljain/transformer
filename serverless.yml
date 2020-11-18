@@ -111,7 +111,7 @@ functions:
   DGTransformer:
     name: ${self:custom.function_name.${self:provider.stage}}
     description: "AWS Lambda function performing dollar generaal transformation step of 'Data Pipeline'."
-    handler: lambda_trigger_batch.lambda_handler
+    handler: main.lambda_trigger_batch.lambda_handler
     events:
       - sns: ${self:custom.SNS_TOPIC_ARN_1}
     environment:

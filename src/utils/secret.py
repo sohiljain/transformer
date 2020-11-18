@@ -3,10 +3,15 @@
 import json
 import boto3
 from botocore.exceptions import ClientError
-
+import logging
 # from utils.utils import send_sns_alert
 
 error_subject = "Transformer: Secret Retrieval Failure"
+
+# create logger
+logging.basicConfig(format='%(name)s:%(levelname)s:%(asctime)s:%(lineno)d: %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def send_sns_alert(subject, error_message):
     pass
@@ -106,6 +111,7 @@ class Secret:
         returns aws secrets text value
         """
 
+        logger.info(f'Retreiving secret for {secret}')
         if secret in self.secret_json:
             return self.secret_json[secret]
         else:

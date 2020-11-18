@@ -65,7 +65,7 @@ pipeline {
         	AWS_SECRET_ACCESS_KEY = credentials('aws-bridg2-secret')
         	DEPLOYMENT = 'production'
         	AWS_DEFAULT_REGION = 'us-west-2'
-        	S3_BUCKET_RAW_DATA_1 = 'bridg-ftp-client'
+        	S3_BUCKET_RAW_DATA_1 = 'bridg-client-ftp'
         	SNS_TOPIC_ARN_1 = 'dg-transformer-lambda-sns'
         	SNS_TOPIC_ARN_2 = 'dollargeneral-transformer-emr-sns'
         	BRIDG_ENV_NAME = 'cdp'
@@ -80,9 +80,9 @@ pipeline {
  	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
           sh 'aws s3 cp s3://bridg-devops-production/bin/deploy_bridg_service.py .'
           sh 'aws s3 cp src s3://bridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
-          sh 'python3 deploy_bridg_service.py'
-          //zip zipFile: 'build/dg_transformer_prepare.zip', archive: false, dir: 'src'
-          //sh 'serverless deploy --stage production --verbose'
+//           sh 'python3 deploy_bridg_service.py'
+          zip zipFile: 'build/dg_transformer_prepare.zip', archive: false, dir: 'src'
+          sh 'serverless deploy --stage production --verbose'
       }
     }
 
