@@ -112,8 +112,8 @@ functions:
     name: ${self:custom.function_name.${self:provider.stage}}
     description: "AWS Lambda function performing dollar generaal transformation step of 'Data Pipeline'."
     handler: main.lambda_trigger_batch.lambda_handler
-    events:
-      - sns: ${self:custom.SNS_TOPIC_ARN_1}
+#    events:
+#      - sns: ${self:custom.SNS_TOPIC_ARN_1}
     environment:
       BRIDG_ENV_NAME: ${self:custom.BRIDG_ENV_NAME}
       BRIDG_CONFIG_URL: ${self:custom.BRIDG_CONFIG_URL}
