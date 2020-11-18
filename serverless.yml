@@ -61,51 +61,51 @@ provider:
 package:
   artifact: build/dg_transformer_prepare.zip
 
-#resources:
-#  Resources:
-#    dGTransformerRole:
-#      Type: "AWS::IAM::Role"
-#      DeletionPolicy: Delete
-#      Properties:
-#        RoleName: dGTransformerLambdaRole-${opt:stage}
-#        AssumeRolePolicyDocument:
-#          Version: '2012-10-17'
-#          Statement:
-#            - Effect: Allow
-#              Principal:
-#                Service:
-#                  - lambda.amazonaws.com
-#                  - events.amazonaws.com
-#              Action: sts:AssumeRole
-#        ManagedPolicyArns:
-#          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-#        Policies:
-#          - PolicyName: dGTransformerSchedulerPolicy
-#            PolicyDocument:
-#              Version: '2012-10-17'
-#              Statement:
-#                - Effect: Allow # note that these rights are given in the default policy and are required if you want logs out of your lambda(s)
-#                  Action:
-#                    - logs:CreateLogGroup
-#                    - logs:CreateLogStream
-#                    - logs:PutLogEvents
-#                    - logs:GetLogEvents
-#                  Resource: "arn:aws:logs:${self:custom.AWS_REGION}:*:log-group:/aws/lambda/*:*:*"
-#                - Effect: Allow
-#                  Action:
-#                    - lambda:InvokeFunction
-#                    - lambda:GetFunction
-#                  Resource: "arn:aws:lambda:${self:custom.AWS_REGION}:*:function:${self:custom.function_name.${self:provider.stage}}"
-#                - Effect: Allow
-#                  Action:
-#                    - events:*
-#                  Resource: "*"
-#                - Effect: Allow
-#                  Action:
-#                    - s3:*
-#                  Resource:
-#                    - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}/*"
-#                    - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}"
+resources:
+  Resources:
+    dGTransformerRole:
+      Type: "AWS::IAM::Role"
+      DeletionPolicy: Delete
+      Properties:
+        RoleName: dGTransformerLambdaRole-${opt:stage}
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+                  - events.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        Policies:
+          - PolicyName: dGTransformerSchedulerPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow # note that these rights are given in the default policy and are required if you want logs out of your lambda(s)
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                    - logs:GetLogEvents
+                  Resource: "arn:aws:logs:${self:custom.AWS_REGION}:*:log-group:/aws/lambda/*:*:*"
+                - Effect: Allow
+                  Action:
+                    - lambda:InvokeFunction
+                    - lambda:GetFunction
+                  Resource: "arn:aws:lambda:${self:custom.AWS_REGION}:*:function:${self:custom.function_name.${self:provider.stage}}"
+                - Effect: Allow
+                  Action:
+                    - events:*
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - s3:*
+                  Resource:
+                    - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}/*"
+                    - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}"
 
 functions:
   DGTransformer:
