@@ -63,11 +63,11 @@ package:
 
 resources:
   Resources:
-    dGTransformerRole:
+    DGTransformerRole:
       Type: "AWS::IAM::Role"
       DeletionPolicy: Delete
       Properties:
-        RoleName: dGTransformerLambdaRole-${opt:stage}
+        RoleName: DGTransformerLambdaRole-${opt:stage}
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -80,7 +80,7 @@ resources:
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         Policies:
-          - PolicyName: dGTransformerSchedulerPolicy
+          - PolicyName: DGTransformerSchedulerPolicy
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
