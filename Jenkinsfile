@@ -71,10 +71,10 @@ pipeline {
         	BRIDG_ENV_NAME = 'cdp'
         	BRIDG_CONFIG_URL = 'http://config.dev-cdp.towerbridg.com/'
         	BRIDG_1_ACCOUNT = credentials('bridg1-account-id')
-        	SUBNET_A = 'subnet-087812d39e3c1abf7'
-          SUBNET_B = 'subnet-0334a02247d7b732d'
-          SUBNET_C = 'subnet-0428a47dfeff0c654'
-          SECURITY_GROUP = 'sg-08bcfd652a860cf54'
+            SUBNET_A = 'subnet-080ca4bae7f28e8a9'
+            SUBNET_B = 'subnet-0fa602d9b7d5ac155'
+            SUBNET_C = 'subnet-072541dffe416a273'
+            SECURITY_GROUP = 'sg-08bcfd652a860cf54'
       }
       steps {
  	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
