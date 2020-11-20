@@ -69,7 +69,11 @@ pipeline {
         	SNS_TOPIC_ARN_1 = 'dg-transformer-lambda-prod-sns'
         	SNS_TOPIC_ARN_2 = 'dollargeneral-transformer-emr-sns'
         	BRIDG_ENV_NAME = 'cdp'
-        	BRIDG_CONFIG_URL = 'http://config.dev-cdp.towerbridg.com/'
+        	BRIDG_CONFIG_URL = 'http://config-cdp.towerbridg.com/'
+        	BATCH_JOBNAME = 'cdp-dg-transformer'
+            BATCH_JOBQUEUE = 'cdp-que'
+            BATCH_JOBDEFINITION = 'cdp-dg-transformer'
+            ALERT_SNS_PARAM = '/cdp/SNS/Alarm'
         	BRIDG_1_ACCOUNT = credentials('bridg1-account-id')
             SUBNET_A = 'subnet-080ca4bae7f28e8a9'
             SUBNET_B = 'subnet-0fa602d9b7d5ac155'
