@@ -118,6 +118,10 @@ resources:
                   Action:
                     - elasticmapreduce:*
                   Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - iam:PassRole
+                  Resource: "arn:aws:iam::596832493770:role/EMR_DefaultRole"
 
 
 functions:
