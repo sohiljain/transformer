@@ -114,6 +114,10 @@ resources:
                   Action:
                     - batch:*
                   Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - elasticmapreduce:*
+                  Resource: "*"
 
 
 functions:
