@@ -112,12 +112,14 @@ resources:
                     - "arn:aws:s3:::${self:custom.S3_BUCKET_RAW_DATA_1}"
                 - Effect: Allow
                   Action:
-                    - batch:*
-                  Resource: "*"
+                    - batch:SubmitJob
+                  Resource:
+                    - "arn:aws:batch:us-west-2:596832493770:job-definition/cdp-dg-transformer:*"
+                    - "arn:aws:batch:us-west-2:596832493770:job-queue/cdp-que"
                 - Effect: Allow
                   Action:
                     - elasticmapreduce:*
-                  Resource: "*"
+                  Resource: "*"  # Have not specified resource here because we start ephemeral cluster which terminate after job completion
                 - Effect: Allow
                   Action:
                     - iam:PassRole
@@ -138,6 +140,7 @@ functions:
     handler: main/lambda_trigger_batch.lambda_handler
     events:
       - sns: ${self:custom.SNS_TOPIC_ARN_1}
+      - sns: arn:aws:sns:us-west-2:992345807264:${self:custom.SNS_TOPIC_ARN_2}
     environment:
       S3_BUCKET_RAW_DATA_1: ${self:custom.S3_BUCKET_RAW_DATA_1}
       BATCH_JOBNAME: ${self:custom.BATCH_JOBNAME}
