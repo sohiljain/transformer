@@ -9,6 +9,9 @@ import boto3
 import errno
 from botocore.exceptions import ClientError
 
+from utils.config import GithubConnectionConfiguration
+from utils.secret import Secret
+
 s3_resource = boto3.resource('s3')
 s3_client = boto3.client('s3')
 
@@ -16,6 +19,15 @@ s3_client = boto3.client('s3')
 logging.basicConfig(format='%(name)s:%(levelname)s:%(asctime)s:%(lineno)d: %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+def get_git_credentials(source_secret_name: str):
+    """Method that takes in GIT secret name and returns the Access Token"""
+    logging.info(f"retreiving GIT Access Token")
+    git_credentials = Secret(source_secret_name)
+    username = git_credentials.get_username()
+    password = git_credentials.get_password()
+    return GithubConnectionConfiguration(username, password)
 
 
 def get_matching_s3_keys(bucket, prefix='', suffix=''):
@@ -181,3 +193,5 @@ def send_sns_alert(subject, error_message):
     except Exception as e:
         logger.error(f"Failed to publish SNS message {e}", exc_info=True)
         raise Exception(f"Failed to publish SNS message {e}")
+
+

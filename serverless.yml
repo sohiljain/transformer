@@ -84,7 +84,7 @@ resources:
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         Policies:
-          - PolicyName: DollarGeneralTransformerSchedulerPolicy
+          - PolicyName: DollarGeneralTransformerSchedulerPolicy-${opt:stage}
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
@@ -147,5 +147,6 @@ functions:
       BATCH_JOBQUEUE: ${self:custom.BATCH_JOBQUEUE}
       BATCH_JOBDEFINITION: ${self:custom.BATCH_JOBDEFINITION}
       ALERT_SNS_PARAM: ${self:custom.ALERT_SNS_PARAM}
+      BRIDG_ENV_NAME: ${self:custom.BRIDG_ENV_NAME}
     tags:
       Environment: ${self:custom.BRIDG_ENV_NAME}

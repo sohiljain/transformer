@@ -1,7 +1,5 @@
 import json
-import os
-import boto3
-import logging
+import os, boto3, logging, yaml
 import datetime as dt
 from utils.utils import send_sns_alert
 
@@ -24,7 +22,44 @@ def lambda_handler(event, context):
     :param context: lambda context
     :return: Success/Failure message
     """
+    return event
+    # if type(event)!='dict':
+    #     pass
+    #
+    # if event.key() == 'Records'
+    #     s3_key = event['Records']['s3']['bucket']['name']['s3']['bucket']['name']:
+    # #     Then call the check_s3_files(s3_key)
+    # elif:
+    #     event.key() == 'emr':
+    #     trigger_emr()
+    # else:
+    #     raise ValueError()
 
+    # for record in event['Records']:
+    #     bucket = record['s3']['bucket']['name']['s3']['bucket']['name']
+    #     key = record['s3']['object']['key'])
+    #     print(bucket)
+    #     print(key)
+
+def trigger_emr():
+
+    connection = boto3.client('emr', region_name='us-west-2')
+    logging.info("Starting Dollargeneral Transformer pipeline")
+
+    with open(f'/Users/sjain/PycharmProjects/bridg-dollargeneral-transformer/src/config/emr.yml',
+              'r') as yml_file:
+        emr_conf = yaml.safe_load(yml_file)
+
+    try:
+        cluster_id = connection.run_job_flow(**emr_conf)
+        response = f"Cluster created with the step..{cluster_id['JobFlowId']}"
+    except:
+        response = f"Cluster cannot be started"
+
+    return response
+
+
+def check_s3_files():
     s3_client = boto3.client('s3')
     bucket = 'bridg-client-ftp'
     remote_1010_path = 'dollargeneral/1010/Daily'
