@@ -88,7 +88,7 @@ pipeline {
           sh 'aws s3 cp s3://bridg-devops-production/bin/deploy_bridg_service.py .'
           sh 'aws s3 cp src s3://bridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
 //           sh 'python3 deploy_bridg_service.py'
-          pip install --target ./src pyyaml
+          sh 'pip install --target ./src pyyaml'
           zip zipFile: 'build/dg_transformer_prepare.zip', archive: false, dir: 'src'
           sh 'serverless deploy --stage production --verbose'
       }
