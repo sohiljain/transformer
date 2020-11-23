@@ -118,6 +118,10 @@ resources:
                     - "arn:aws:batch:us-west-2:596832493770:job-queue/cdp-que"
                 - Effect: Allow
                   Action:
+                    - batch:*
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
                     - elasticmapreduce:*
                   Resource: "*"  # Have not specified resource here because we start ephemeral cluster which terminate after job completion
                 - Effect: Allow
