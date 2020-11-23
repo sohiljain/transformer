@@ -33,7 +33,7 @@ pipeline {
         	AWS_SECRET_ACCESS_KEY = credentials('aws-bridg2-secret')
         	DEPLOYMENT = 'development'
         	AWS_DEFAULT_REGION = 'us-west-2'
-        	S3_BUCKET_RAW_DATA_1 = 'bridg-ftp-client'
+        	S3_BUCKET_RAW_DATA_1 = 'bridg-client-ftp'
             SNS_TOPIC_ARN_1 = 'dg-transformer-lambda-sns'
         	SNS_TOPIC_ARN_2 = 'data_ingestion_ftp_sync'
         	BRIDG_CONFIG_URL = 'http://config-dev-cdp.towerbridg.com/'
