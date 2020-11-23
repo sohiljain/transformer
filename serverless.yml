@@ -14,7 +14,7 @@ custom:
     - development
     - production
   function_name:
-    development: bridg-dg-transformer
+    development: bridg-dg-transformer-dev
     production: bridg-dg-transformer
   AWS_REGION: ${env:AWS_DEFAULT_REGION}
   DEAD_LETTER_QUEUE: ${self:custom.function_name.${self:provider.stage}}-dead-letter-queue
