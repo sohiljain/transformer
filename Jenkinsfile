@@ -51,7 +51,9 @@ pipeline {
       }
       steps {
  	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
-//           sh 'aws s3 cp s3://bridg-devops-production/bin/deploy_bridg_service.py .'
+ 	      sh 'aws s3 cp s3://bridg-devops-production/bin/deploy_bridg_service.py .'
+          sh 'aws s3 cp src s3://bridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
+          sh 'python3 deploy_bridg_service.py'
           sh 'pip install --target ./src pyyaml'
           zip zipFile: 'build/dg_transformer_prepare.zip', archive: false, dir: 'src'
           sh 'serverless deploy --stage development --verbose'

@@ -13,10 +13,10 @@ production:
 development:
   type: batch
   command:
-  environmentName: dev-cdp
+  environmentName: cdp
   cpu: 2
-  memory: 8192
-  taskRole: /dev-cdp/Services/dg-transformer/taskRole
+  memory: 3192
+  taskRole: /cdp/Services/dg-transformer/taskRole
   environmentalVariables:
   - Name: ALERT_SNS_PARAM
     Value: /dev-cdp/SNS/Alarm
