@@ -140,7 +140,7 @@ functions:
     handler: main/lambda_trigger_batch.lambda_handler
     events:
       - sns: ${self:custom.SNS_TOPIC_ARN_1}
-      - sns: arn:aws:sns:us-west-2:992345807264:${self:custom.SNS_TOPIC_ARN_2}
+#      - sns: arn:aws:sns:us-west-2:992345807264:${self:custom.SNS_TOPIC_ARN_2}
     environment:
       S3_BUCKET_RAW_DATA_1: ${self:custom.S3_BUCKET_RAW_DATA_1}
       BATCH_JOBNAME: ${self:custom.BATCH_JOBNAME}
