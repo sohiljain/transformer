@@ -22,7 +22,7 @@ custom:
   BRIDG_CONFIG_URL: ${env:BRIDG_CONFIG_URL}
   BRIDG_1_ACCOUNT: ${env:BRIDG_1_ACCOUNT}
   S3_BUCKET_RAW_DATA_1: ${env:S3_BUCKET_RAW_DATA_1} # Name not ARN
-  SNS_TOPIC_ARN_1: ${env:SNS_TOPIC_ARN_1}
+  SNS_TOPIC_ARN_1: ${env:SNS_TOPIC_ARN_1.${self:provider.stage}}
   SNS_TOPIC_ARN_2: ${env:SNS_TOPIC_ARN_2}
   security_group: ${env:SECURITY_GROUP, 'sg-0710b844e08d5cb2e'}
   SUBNET_A: ${env:SUBNET_A, 'subnet-051cad2b010989d3a'}
@@ -31,7 +31,7 @@ custom:
   BATCH_JOBNAME: ${env:BATCH_JOBNAME}
   BATCH_JOBQUEUE: ${env:BATCH_JOBQUEUE}
   BATCH_JOBDEFINITION: ${env:BATCH_JOBDEFINITION}
-  ALERT_SNS_PARAM: ${env:ALERT_SNS_PARAM}
+  ALERT_SNS_PARAM: /${env:BRIDG_ENV_NAME}/${env:ALERT_SNS_PARAM}
 
 provider:
   name: aws
