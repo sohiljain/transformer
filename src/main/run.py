@@ -14,7 +14,7 @@ import yaml
 from main.emr_process_gold import process_gold
 from main.pgp_decrypt_upload import pgp_decrypt
 from utils.config import DgConfig
-from utils.utils import get_git_credentials
+# from utils.utils import get_git_credentials
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(message)s')
