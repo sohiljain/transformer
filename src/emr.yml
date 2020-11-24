@@ -7,7 +7,7 @@ Configurations:
     - Classification: spark-env
       Configurations:
         - Classification: export
-        - Properties:
+          Properties:
             PYSPARK_PYTHON: "/usr/bin/python3"
 Instances:
     HadoopVersion: Amazon 2.8.5

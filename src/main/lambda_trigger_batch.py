@@ -3,7 +3,7 @@ import os, boto3, logging, yaml
 import datetime as dt
 
 # create logger
-logging.basicConfig(format='%(name)s:%(levelname)s:%(asctime)s:%(lineno)d: %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -42,13 +42,11 @@ def lambda_handler(event, context):
 
 def trigger_emr():
     connection = boto3.client('emr', region_name='us-west-2')
-    logging.info("Starting Dollargeneral Transformer pipeline")
-
-    with open(f'/var/task/bridg-dollargeneral-transformer/src/config/emr.yml',
-              'r') as yml_file:
-        emr_conf = yaml.safe_load(yml_file)
+    logger.info("Starting Dollargeneral Transformer pipeline")
 
     try:
+        with open(f'/var/task/emr.yml','r') as yml_file:
+            emr_conf = yaml.safe_load(yml_file)
         cluster_id = connection.run_job_flow(**emr_conf)
         response = f"Cluster created with the step..{cluster_id['JobFlowId']}"
     except:
@@ -127,4 +125,3 @@ def send_sns_alert(subject, error_message):
     except Exception as e:
         logger.error(f"Failed to publish SNS message {e}", exc_info=True)
         raise Exception(f"Failed to publish SNS message {e}")
-
