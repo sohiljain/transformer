@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 
 import yaml
-from git import Repo
+# from git import Repo
 
 from main.emr_process_gold import process_gold
 from main.pgp_decrypt_upload import pgp_decrypt
@@ -20,12 +20,12 @@ from utils.utils import get_git_credentials
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(message)s')
 
 
-def get_code(username, password, branch):
-    """Method to checkout config-repository"""
-    remote = f"https://{username}:{password}@github.com/Bridg/config-repository.git"
-    repo = Repo.clone_from(remote, 'config-repo')
-    repo.git.checkout(branch)
-    logging.info("Git checkout complete for branch {}".format(branch))
+# def get_code(username, password, branch):
+#     """Method to checkout config-repository"""
+#     remote = f"https://{username}:{password}@github.com/Bridg/config-repository.git"
+#     repo = Repo.clone_from(remote, 'config-repo')
+#     repo.git.checkout(branch)
+#     logging.info("Git checkout complete for branch {}".format(branch))
 
 
 if __name__ == "__main__":

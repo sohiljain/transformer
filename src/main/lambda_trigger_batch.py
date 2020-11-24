@@ -1,7 +1,6 @@
 import json
 import os, boto3, logging, yaml
 import datetime as dt
-from utils.utils import send_sns_alert
 
 # create logger
 logging.basicConfig(format='%(name)s:%(levelname)s:%(asctime)s:%(lineno)d: %(message)s', level=logging.INFO)
@@ -22,31 +21,32 @@ def lambda_handler(event, context):
     :param context: lambda context
     :return: Success/Failure message
     """
-    return event
-    # if type(event)!='dict':
-    #     pass
-    #
-    # if event.key() == 'Records'
-    #     s3_key = event['Records']['s3']['bucket']['name']['s3']['bucket']['name']:
-    # #     Then call the check_s3_files(s3_key)
-    # elif:
-    #     event.key() == 'emr':
-    #     trigger_emr()
-    # else:
-    #     raise ValueError()
+    try:
 
-    # for record in event['Records']:
-    #     bucket = record['s3']['bucket']['name']['s3']['bucket']['name']
-    #     key = record['s3']['object']['key'])
-    #     print(bucket)
-    #     print(key)
+        if type(event) == dict:
+            for record in event['Records']:
+                s3_key = record['Sns']['Message']['Records'][0]['s3']['object']['key']
+                file_name = s3_key.split('/')[5]
+                date_value = file_name.split('_')[2][:8]
+                return_msg = check_s3_files(date_value)
+
+        elif event == "Trigger DG transformer EMR":
+            trigger_emr()
+
+        else:
+            logger.error("Unrecognised Trigger")
+
+    except Exception as e:
+        return_msg = "Trigger not found"
+
+    return return_msg
+
 
 def trigger_emr():
-
     connection = boto3.client('emr', region_name='us-west-2')
     logging.info("Starting Dollargeneral Transformer pipeline")
 
-    with open(f'/Users/sjain/PycharmProjects/bridg-dollargeneral-transformer/src/config/emr.yml',
+    with open(f'/var/task/bridg-dollargeneral-transformer/src/config/emr.yml',
               'r') as yml_file:
         emr_conf = yaml.safe_load(yml_file)
 
@@ -59,7 +59,7 @@ def trigger_emr():
     return response
 
 
-def check_s3_files():
+def check_s3_files(date_value):
     s3_client = boto3.client('s3')
     bucket = 'bridg-client-ftp'
     remote_1010_path = 'dollargeneral/1010/Daily'
@@ -75,7 +75,7 @@ def check_s3_files():
                     filename = content['Key'].split('/')[-1]
                     logger.info(filename)
 
-        return_msg = kickoff_transfer_batch()
+        return_msg = kickoff_transfer_batch(date_value)
 
     except Exception as e:
         return_msg = f'{folder} file not found'
@@ -83,16 +83,17 @@ def check_s3_files():
     return return_msg
 
 
-def kickoff_transfer_batch():
+def kickoff_transfer_batch(date_value):
     """
     Code to start pgp_decrypt batch job
     :return: Appropriate success/failure message
     """
+    env_detail = os.environ['BRIDG_ENV_NAME'].split('-')[0]
     batch = boto3.client('batch')
     jobName = os.environ.get('BATCH_JOBNAME', 'cdp-dg-transformer')
     jobQueue = os.environ.get('BATCH_JOBQUEUE', 'cdp-que')
     jobDefinition = os.environ.get('BATCH_JOBDEFINITION', 'cdp-dg-transformer')
-    command = f'--date {date_value}'
+    command = f'--module batch_pgp_decrypt --date {date_value} --env {env_detail}'
     command = command.split()
 
     try:
@@ -110,3 +111,22 @@ def kickoff_transfer_batch():
         batch_response_message = "error: " + str(err)
 
     return batch_response_message
+
+def send_sns_alert(subject, error_message):
+    """ method used to send SNS alert on topic provided."""
+    try:
+        # getting sns topic arn from parameter store
+        ssm = boto3.client('ssm', region_name='us-west-2')
+        sns_topic_arn = ssm.get_parameter(Name=os.getenv("ALERT_SNS_PARAM"))['Parameter']['Value']
+
+        # sending sns message for alerting on slack and email
+        sns_client = boto3.client('sns', region_name='us-west-2')
+        sns_client.publish(
+            TopicArn=sns_topic_arn,
+            Subject=subject,
+            Message=str(error_message)
+        )
+    except Exception as e:
+        logger.error(f"Failed to publish SNS message {e}", exc_info=True)
+        raise Exception(f"Failed to publish SNS message {e}")
+

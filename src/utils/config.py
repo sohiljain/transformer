@@ -38,8 +38,8 @@ class DgConfig:
         self.cols = yaml_cfg.get('cols', '')
 
 
-class GithubConnectionConfiguration:
-
-    def __init__(self, username, password ):
-        self.git_username = username
-        self.git_password = password
+# class GithubConnectionConfiguration:
+#
+#     def __init__(self, username, password ):
+#         self.git_username = username
+#         self.git_password = password
