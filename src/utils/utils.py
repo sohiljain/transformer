@@ -176,22 +176,25 @@ def count_check(spark, s3a_bucket, s3_archive_path, s3_tmp_path, table, args_dt)
         sys.exit(1)
 
 
-def send_sns_alert(subject, error_message):
+def send_sns_alert(subject, message):
     """ method used to send SNS alert on topic provided."""
     try:
         # getting sns topic arn from parameter store
         ssm = boto3.client('ssm', region_name='us-west-2')
-        sns_topic_arn = ssm.get_parameter(Name=os.getenv("ALERT_SNS_PARAM"))['Parameter']['Value']
+
+        # check for EMR or ALERT SNS topic
+        if subject == 'batch_pgp_decrypt':
+            sns_topic_arn = os.getenv("EMR_SNS_PARAM")
+        else:
+            sns_topic_arn = ssm.get_parameter(Name=os.getenv("ALERT_SNS_PARAM"))['Parameter']['Value']
 
         # sending sns message for alerting on slack and email
         sns_client = boto3.client('sns', region_name='us-west-2')
         sns_client.publish(
             TopicArn=sns_topic_arn,
             Subject=subject,
-            Message=str(error_message)
+            Message=str(message)
         )
     except Exception as e:
         logger.error(f"Failed to publish SNS message {e}", exc_info=True)
         raise Exception(f"Failed to publish SNS message {e}")
-
-

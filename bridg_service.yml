@@ -9,6 +9,8 @@ production:
   environmentalVariables:
   - Name: ALERT_SNS_PARAM
     Value: /cdp/SNS/Alarm
+  - Name: EMR_SNS_PARAM
+    Value: "dg-transformer-lambda-sns-production"
 
 development:
   type: batch
@@ -20,4 +22,6 @@ development:
   environmentalVariables:
   - Name: ALERT_SNS_PARAM
     Value: /dev-cdp/SNS/Alarm
+  - Name: EMR_SNS_PARAM
+    Value: "dg-transformer-lambda-sns-development"
 

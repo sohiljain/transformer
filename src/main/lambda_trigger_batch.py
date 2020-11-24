@@ -21,20 +21,18 @@ def lambda_handler(event, context):
     :param context: lambda context
     :return: Success/Failure message
     """
+
     try:
-
-        if type(event) == dict:
-            for record in event['Records']:
-                s3_key = record['Sns']['Message']['Records'][0]['s3']['object']['key']
-                file_name = s3_key.split('/')[5]
-                date_value = file_name.split('_')[2][:8]
-                return_msg = check_s3_files(date_value)
-
-        elif event == "Trigger DG transformer EMR":
-            trigger_emr()
-
-        else:
-            logger.error("Unrecognised Trigger")
+        for record in event['Records']:
+            message = record['Sns']['Message']
+            if message == "Start EMR Process Gold":
+                return_msg = trigger_emr()
+            else:
+                for record in event['Records']:
+                    s3_key = record['Sns']['Message']['Records'][0]['s3']['object']['key']
+                    file_name = s3_key.split('/')[5]
+                    date_value = file_name.split('_')[2][:8]
+                    return_msg = check_s3_files(date_value)
 
     except Exception as e:
         return_msg = "Trigger not found"
@@ -106,11 +104,11 @@ def kickoff_transfer_batch(date_value):
         job_id = submit_job_response['jobId']
         batch_response_message = 'Submitted job {} {} to the job queue {}'.format(jobName, job_id, jobQueue)
     except Exception as err:
-        send_sns_alert(f"Batch job failure: {jobName} Metrics Failure",
-                       f"""Job ID : {job_id} Job Queue : {jobQueue}""")
+        # send_sns_alert(subject='', message="Start EMR Process gold")
         batch_response_message = "error: " + str(err)
 
     return batch_response_message
+
 
 def send_sns_alert(subject, error_message):
     """ method used to send SNS alert on topic provided."""

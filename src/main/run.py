@@ -7,6 +7,7 @@ This script decides what ETL to perform based on the parameters passed
 import argparse
 import logging
 from datetime import datetime
+from utils.utils import send_sns_alert
 
 import yaml
 # from git import Repo
@@ -69,7 +70,12 @@ if __name__ == "__main__":
     logging.info("configuration file passed for = {}".format(config_file_path))
 
     if args.module == "batch_pgp_decrypt":
-        pgp_decrypt(dg_config, args_dt, root_dir)
+        try:
+            pgp_decrypt(dg_config, args_dt, root_dir)
+            send_sns_alert(subject=args.module, message="Start EMR Process Gold")
+
+        except Exception as e:
+            logging.error(f"Failed to publish SNS message {e} for BATCH job")
 
     elif args.module == "emr_process_gold":
         process_gold(dg_config, args_dt)
