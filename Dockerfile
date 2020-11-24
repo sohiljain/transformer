@@ -21,4 +21,4 @@ RUN pipenv install --skip-lock
 ENV PYTHONPATH "${PYTHONPATH}:/code/src"
 ENV ALERT_SNS_PARAM="/cdp/SNS/Alarm"
 
-ENTRYPOINT ["pipenv", "run", "python3", "main/pgp_decrypt_upload.py"]
+ENTRYPOINT ["pipenv", "run", "python3", "main/run.py"]
