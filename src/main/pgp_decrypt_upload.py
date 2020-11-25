@@ -4,7 +4,7 @@
 import boto3
 import os, logging, sys
 import datetime as dt
-from utils.utils import download_s3_fileobj, copy_staging_files, assert_file_exists, gpg_decrytion
+from utils.utils import copy_staging_files, assert_file_exists, gpg_decrytion
 from utils.config import DgConfig
 
 # create logger

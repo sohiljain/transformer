@@ -1,4 +1,4 @@
-Name: cdp-dg-transformer-emr-cluster
+Name: prod-cdp-dg-transformer-emr-cluster
 LogUri: "s3://bridg-client-ftp/dollargeneral/transformed/logs"
 ReleaseLabel: "emr-5.27.0"
 Applications:

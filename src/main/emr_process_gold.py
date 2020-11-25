@@ -1,7 +1,6 @@
 import logging
 import sys
 import boto3
-from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 from utils.utils import get_matching_s3_keys, s3_delete_file, count_check
 from utils.config import DgConfig
@@ -13,6 +12,7 @@ s3_client = boto3.client('s3')
 logging.basicConfig(format='%(name)s:%(levelname)s:%(asctime)s:%(lineno)d: %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 #Creating temporary tables for joining data
 def create_temptable(table_name, spark, dg_config):
@@ -96,9 +96,9 @@ def format_gold_file(table, spark, dg_config, args_dt):
         logger.error(f'{e} Unable to rename file')
 
 
-def process_gold(dg_config: DgConfig, args_dt):
+def process_gold(spark, dg_config: DgConfig, args_dt):
     try:
-        spark = SparkSession.builder.getOrCreate()
+
         spark.sql("set fs.s3a.multiobjectdelete.enable=false")
         logger.info('spark initiated')
 

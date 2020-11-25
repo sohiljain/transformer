@@ -8,25 +8,16 @@ import argparse
 import logging
 from datetime import datetime
 from utils.utils import send_sns_alert
-
+from pyspark.sql import SparkSession
 import yaml
 # from git import Repo
 
 from main.emr_process_gold import process_gold
 from main.pgp_decrypt_upload import pgp_decrypt
 from utils.config import DgConfig
-# from utils.utils import get_git_credentials
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(message)s')
-
-
-# def get_code(username, password, branch):
-#     """Method to checkout config-repository"""
-#     remote = f"https://{username}:{password}@github.com/Bridg/config-repository.git"
-#     repo = Repo.clone_from(remote, 'config-repo')
-#     repo.git.checkout(branch)
-#     logging.info("Git checkout complete for branch {}".format(branch))
 
 
 if __name__ == "__main__":
@@ -46,16 +37,6 @@ if __name__ == "__main__":
     root_dir = args.root_dir
     logging.info(f'Root directory has been set as {root_dir}')
 
-    # try:
-    #     # Running on production and getting config file from git
-    #     git_credentials = get_git_credentials('/prod/bdl/git')
-    #     get_code(git_credentials.git_username, git_credentials.git_password, args.branch)
-    #     environment = 'prod' if args.branch == 'master' else 'dev'
-    #     logging.info("Environment selected {}".format(environment))
-    #     config_file_path = 'config-repo' + '/' + 'bridg-dollargeneral-transformer' + '/' + environment \
-    #                        + '/transformer.yml'  # if branch is master this should be prod else dev
-    # except Exception as e:
-    #     # Running on local and getting config file from local path
     config_file = f'{args.env}-transformer.yml'
     config_file_path = f'{root_dir}/config/{config_file}'
 
@@ -76,9 +57,12 @@ if __name__ == "__main__":
 
         except Exception as e:
             logging.error(f"Failed to publish SNS message {e} for BATCH job")
+            # send_sns_alert(subject='PGP Decrypt Batch Failed', message=e)
 
     elif args.module == "emr_process_gold":
-        process_gold(dg_config, args_dt)
-
+        spark = SparkSession.builder.getOrCreate()
+        spark.sparkContext.addPyFile('./dg_transformer_prepare.zip')
+        process_gold(spark, dg_config, args_dt)
+        # send_sns_alert(subject='EMR Process Gold Failed', message=e)
     else:
         raise ValueError(f'Invalid or no module value passed: {args.module}')
