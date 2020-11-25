@@ -56,7 +56,7 @@ pipeline {
 //           sh 'aws s3 cp src s3://bridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
           sh 'python3 deploy_bridg_service.py'
           sh 'pip install --target ./src pyyaml'
-          sh 'pip install --target ./src python-gnupg==0.4.6
+          sh 'pip install --target ./src python-gnupg==0.4.6'
           zip zipFile: 'build/dg_transformer_prepare.zip', archive: false, dir: 'src'
           sh 'aws s3 cp build/dg_transformer_prepare.zip s3://bridg-binary-registry/bridg-dollargeneral-transformer/'
           sh 'serverless deploy --stage development --verbose'
