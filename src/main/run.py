@@ -7,14 +7,17 @@ This script decides what ETL to perform based on the parameters passed
 import argparse
 import logging
 from datetime import datetime
-from utils.utils import send_sns_alert
 from pyspark.sql import SparkSession
-import yaml
+
 # from git import Repo
+
+spark = SparkSession.builder.getOrCreate()
+spark.sparkContext.addPyFile('./dg_transformer_prepare.zip')
 
 from main.emr_process_gold import process_gold
 from main.pgp_decrypt_upload import pgp_decrypt
 from utils.config import DgConfig
+import yaml
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(message)s')
@@ -53,15 +56,12 @@ if __name__ == "__main__":
     if args.module == "batch_pgp_decrypt":
         try:
             pgp_decrypt(dg_config, args_dt, root_dir)
-            send_sns_alert(subject=args.module, message="Start EMR Process Gold")
 
         except Exception as e:
             logging.error(f"Failed to publish SNS message {e} for BATCH job")
             # send_sns_alert(subject='PGP Decrypt Batch Failed', message=e)
 
     elif args.module == "emr_process_gold":
-        spark = SparkSession.builder.getOrCreate()
-        spark.sparkContext.addPyFile('./dg_transformer_prepare.zip')
         process_gold(spark, dg_config, args_dt)
         # send_sns_alert(subject='EMR Process Gold Failed', message=e)
     else:
