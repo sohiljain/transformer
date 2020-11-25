@@ -7,7 +7,6 @@ logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-env = os.environ['env']
 env_detail = os.environ['BRIDG_ENV_NAME'].split('-')[0]
 jobName = os.environ.get('BATCH_JOBNAME', 'cdp-dg-transformer')
 jobQueue = os.environ.get('BATCH_JOBQUEUE', 'cdp-que')
@@ -46,10 +45,10 @@ def lambda_handler(event, context):
 
 def trigger_emr():
     connection = boto3.client('emr', region_name='us-west-2')
-    logger.info(f"{env} - Starting Dollargeneral Transformer pipeline")
+    logger.info(f"{env_detail} - Starting Dollargeneral Transformer pipeline")
 
     try:
-        with open(f'/var/task/{env}-emr.yml','r') as yml_file:
+        with open(f'/var/task/{env_detail}-emr.yml','r') as yml_file:
             emr_conf = yaml.safe_load(yml_file)
         cluster_id = connection.run_job_flow(**emr_conf)
         response = f"Cluster created with the step..{cluster_id['JobFlowId']}"
