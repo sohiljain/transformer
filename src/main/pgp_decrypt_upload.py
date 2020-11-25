@@ -4,7 +4,7 @@
 import boto3
 import os, logging, sys
 import datetime as dt
-from utils.utils import copy_staging_files, assert_file_exists, gpg_decrytion
+from utils.utils import copy_staging_files, assert_file_exists, gpg_decrytion, send_sns_alert
 from utils.config import DgConfig
 
 # create logger
@@ -125,7 +125,7 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir):
         process_aurus(dg_config, root_dir, date_arg)
         process_1010(dg_config, root_dir, date_arg)
 
-    #  send_sns_alert('emr')
+    send_sns_alert(subject="batch_pgp_decrypt", message="Start EMR Process Gold")
 
 
 # if __name__ == '__main__':

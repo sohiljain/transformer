@@ -59,6 +59,7 @@ pipeline {
           sh 'pip install --target ./src python-gnupg==0.4.6'
           zip zipFile: 'build/dg_transformer_prepare.zip', archive: false, dir: 'src'
           sh 'aws s3 cp build/dg_transformer_prepare.zip s3://bridg-binary-registry/bridg-dollargeneral-transformer/'
+          sh 'aws s3 cp src/main/run.py s3://bridg-binary-registry/bridg-dollargeneral-transformer/'
           sh 'serverless deploy --stage development --verbose'
 
       }
