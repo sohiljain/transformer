@@ -12,7 +12,7 @@ from pyspark.sql import SparkSession
 # from git import Repo
 
 spark = SparkSession.builder.getOrCreate()
-spark.sparkContext.addPyFile('./dg_transformer_prepare.zip')
+spark.sparkContext.addPyFile('s3://bridg-binary-registry/bridg-dollargeneral-transformer/dg_transformer_prepare.zip')
 
 from main.emr_process_gold import process_gold
 from main.pgp_decrypt_upload import pgp_decrypt
