@@ -51,11 +51,14 @@ if __name__ == "__main__":
 
     logging.info(f'Root directory has been set as {root_dir}')
     logging.info(f'cwd - {os.getcwd()}')
-    for root, dirs, files in os.walk("./../../"):
-        path = root.split(os.sep)
-        print((len(path) - 1) * '---', os.path.basename(root))
-        for file in files:
-            print(len(path) * '---', file)
+    try:
+        for root, dirs, files in os.walk("/mnt"):
+            path = root.split(os.sep)
+            print((len(path) - 1) * '---', os.path.basename(root))
+            for file in files:
+                print(len(path) * '---', file)
+    except Exception as e:
+        logging.info(e)
 
     with open(config_file_path, 'r') as yml_file:
         yaml_cfg = yaml.safe_load(yml_file)
