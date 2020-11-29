@@ -18,6 +18,7 @@ from main.emr_process_gold import process_gold
 from main.pgp_decrypt_upload import pgp_decrypt
 from utils.config import DgConfig
 import yaml
+import boto3
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(message)s')
@@ -38,17 +39,23 @@ if __name__ == "__main__":
     args = my_parser.parse_args()
     args_dt = args.date
     root_dir = args.root_dir
+
+    config_file = f'{args.env}-transformer.yml'
+    config_file_path = f'{root_dir}/config/{config_file}'
+    logging.info(f'Loading config from {config_file_path}')
+
+    if args.module == "emr_process_gold":
+        s3 = boto3.client('s3', region_name='us-west-2')
+        s3.download_file('bridg-binary-registry', f'bridg-dollargeneral-transformer/config/{config_file}', config_file)
+        config_file_path = config_file
+
     logging.info(f'Root directory has been set as {root_dir}')
     logging.info(f'cwd - {os.getcwd()}')
-    for root, dirs, files in os.walk("."):
+    for root, dirs, files in os.walk("./../../"):
         path = root.split(os.sep)
         print((len(path) - 1) * '---', os.path.basename(root))
         for file in files:
             print(len(path) * '---', file)
-
-    config_file = f'{args.env}-transformer.yml'
-    config_file_path = f'{root_dir}/config/{config_file}' if args.module == "batch_pgp_decrypt" else config_file
-    logging.info(f'Loading config from {config_file_path}')
 
     with open(config_file_path, 'r') as yml_file:
         yaml_cfg = yaml.safe_load(yml_file)
