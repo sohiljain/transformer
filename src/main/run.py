@@ -7,10 +7,11 @@ This script decides what ETL to perform based on the parameters passed
 import argparse
 import logging, os
 from datetime import datetime
-# Uncomment this to run on local - os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages com.amazonaws:aws-java-sdk-pom,org.apache.hadoop:hadoop-aws --conf spark.hadoop.fs.s3a.endpoint=s3.us-west-2.amazonaws.com'
+#os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages com.amazonaws:aws-java-sdk-pom,org.apache.hadoop:hadoop-aws --conf spark.hadoop.fs.s3a.endpoint=s3.us-west-2.amazonaws.com' # - Uncomment this to run on local -
 from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.getOrCreate()
+spark.sparkContext.addFile('s3://bridg-binary-registry/bridg-dollargeneral-transformer/config/dev-transformer.yml')
 spark.sparkContext.addPyFile('s3://bridg-binary-registry/bridg-dollargeneral-transformer/dg_transformer_prepare.zip')
 
 from main.emr_process_gold import process_gold
@@ -39,7 +40,11 @@ if __name__ == "__main__":
     root_dir = args.root_dir
     logging.info(f'Root directory has been set as {root_dir}')
     logging.info(f'cwd - {os.getcwd()}')
-    logging.info(f'listdir - {os.listdir()}')
+    for root, dirs, files in os.walk("."):
+        path = root.split(os.sep)
+        print((len(path) - 1) * '---', os.path.basename(root))
+        for file in files:
+            print(len(path) * '---', file)
 
     config_file = f'{args.env}-transformer.yml'
     config_file_path = f'{root_dir}/config/{config_file}' if args.module == "batch_pgp_decrypt" else config_file
