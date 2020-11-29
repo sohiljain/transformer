@@ -118,7 +118,7 @@ resources:
                     - "arn:aws:batch:us-west-2:596832493770:job-queue/cdp-que"
                 - Effect: Allow
                   Action:
-                    - batch:*
+                    - batch:SubmitJob
                   Resource: "*"
                 - Effect: Allow
                   Action:

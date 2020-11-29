@@ -5,11 +5,10 @@
 This script decides what ETL to perform based on the parameters passed
 '''
 import argparse
-import logging
+import logging, os
 from datetime import datetime
+# Uncomment this to run on local - os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages com.amazonaws:aws-java-sdk-pom,org.apache.hadoop:hadoop-aws --conf spark.hadoop.fs.s3a.endpoint=s3.us-west-2.amazonaws.com'
 from pyspark.sql import SparkSession
-
-# from git import Repo
 
 spark = SparkSession.builder.getOrCreate()
 spark.sparkContext.addPyFile('s3://bridg-binary-registry/bridg-dollargeneral-transformer/dg_transformer_prepare.zip')
@@ -39,9 +38,12 @@ if __name__ == "__main__":
     args_dt = args.date
     root_dir = args.root_dir
     logging.info(f'Root directory has been set as {root_dir}')
+    logging.info(f'cwd - {os.getcwd()}')
+    logging.info(f'listdir - {os.listdir()}')
 
     config_file = f'{args.env}-transformer.yml'
-    config_file_path = f'{root_dir}/config/{config_file}'
+    config_file_path = f'{root_dir}/config/{config_file}' if args.module == "batch_pgp_decrypt" else config_file
+    logging.info(f'Loading config from {config_file_path}')
 
     with open(config_file_path, 'r') as yml_file:
         yaml_cfg = yaml.safe_load(yml_file)

@@ -16,12 +16,12 @@ logger.setLevel(logging.INFO)
 
 #Creating temporary tables for joining data
 def create_temptable(table_name, spark, dg_config):
-    table_path = f'{dg_config.s3a_bucket}/{dg_config.s3_staging_path_1010}/{table_name}/'
+    table_path = f'{dg_config.bucket}/{dg_config.s3_staging_path_1010}/{table_name}/'
     logger.info(f'Creating table dg_{table_name} on {table_path}')
 
     if table_name == 'aurus':
         df = spark.read.csv(
-            f'{dg_config.s3a_bucket}/{dg_config.s3_staging_path}/{table_name}/ADTFF_5_4_4_*',
+            f'{dg_config.bucket}/{dg_config.s3_staging_path}/{table_name}/ADTFF_5_4_4_*',
             sep=',', header=True, nullValue='\\N')
 
         df = (df.withColumn("Store_ID", df["Store_ID"].cast("integer"))
@@ -58,7 +58,7 @@ def format_gold_file(table, spark, dg_config, args_dt):
         logger.info(f'Executing query {dg_config.table_queries.get(table)}')
         df = spark.sql(dg_config.table_queries.get(table))
 
-        tmp_path = f"{dg_config.s3a_bucket}/{dg_config.s3_tmp_path}/{table}/"
+        tmp_path = f"{dg_config.bucket}/{dg_config.s3_tmp_path}/{table}/"
         df.repartition(1, 'partition_col').write.partitionBy('partition_col').csv(tmp_path, header=True, compression='gzip',
                                                                               sep='|', emptyValue='', mode='overwrite')
         logger.info(f'{tmp_path} writing done')
@@ -69,7 +69,7 @@ def format_gold_file(table, spark, dg_config, args_dt):
 
     # Record count validation call
     # Proceed writing to gold only if validation succeeds otherwise call sns_alert
-    count_check(spark, dg_config.s3a_bucket, dg_config.s3_archive_path, dg_config.s3_tmp_path, table, args_dt)
+    count_check(spark, dg_config.bucket, dg_config.s3_archive_path, dg_config.s3_tmp_path, table, args_dt)
 
     try:
         tmp_path_2 = f'{dg_config.s3_tmp_path}/{table}/partition_col'
@@ -95,6 +95,10 @@ def format_gold_file(table, spark, dg_config, args_dt):
     except Exception as e:
         logger.error(f'{e} Unable to rename file')
 
+#TODO add sns alerts
+#TODO add comments and copyrithgs
+#TODO create README
+#TODO add between logic
 
 def process_gold(spark, dg_config: DgConfig, args_dt):
     try:
@@ -118,6 +122,7 @@ def process_gold(spark, dg_config: DgConfig, args_dt):
         s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
         logger.info(f"Deleted staging file path {dg_config.s3_staging_path_1010}")
 
+        #TODO sns alert
 
 # if __name__ == '__main__':
 

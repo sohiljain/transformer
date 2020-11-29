@@ -1,6 +1,6 @@
 Name: dev-cdp-dg-transformer-emr-cluster
-LogUri: "s3://bridg-client-ftp/dollargeneral/transformed/logs"
-ReleaseLabel: "emr-5.27.0"
+LogUri: "s3://bridg-client-ftp/dollargeneral/transformed/logs" #TODO Change this
+ReleaseLabel: "emr-6.1.0"
 Applications:
     - Name: "Spark"
 Configurations:
@@ -76,13 +76,13 @@ Steps:
         - spark-submit
         - --py-files
         - s3://bridg-binary-registry/bridg-dollargeneral-transformer/dg_transformer_prepare.zip
-        - s3://bridg-binary-registry/bridg-dollargeneral-transformer/src/main/run.py
+        - --files
+        - s3://bridg-binary-registry/bridg-dollargeneral-transformer/config/dev-transformer.yml
+        - s3://bridg-binary-registry/bridg-dollargeneral-transformer/main/run.py
         - --module
         - emr_process_gold
         - --env
         - dev
-        - --root-dir
-        - s3://bridg-binary-registry/bridg-dollargeneral-transformer/src
 VisibleToAllUsers: True
 JobFlowRole: "EMR_EC2_DefaultRole"
 ServiceRole: "EMR_DefaultRole"
