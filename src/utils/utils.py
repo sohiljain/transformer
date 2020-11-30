@@ -142,9 +142,11 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table):
                                     nullValue='\\N')
     logger.info(f'{table} test begins')
 
-    if table == 'line_item':
-        count_transactiontimestamp = {
-            df_transformed.where("transactiontimestamp='' or transactiontimestamp is null").count()}
+    count_transactiontimestamp = df_transformed.where(
+        "transactiontimestamp='' or transactiontimestamp is null").count() if table == 'line_item' else 0
+
+    count_check_id = df_transformed.where("check_id='' or check_id is null").count() if table in ['line_item',
+                    'transactions', 'tenders', 'discounts'] else 0
 
     if table == 'tenders':
         count_customer_name = {df_transformed.select("customer_name").distinct().count()}
@@ -152,9 +154,6 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table):
             pass
             # send_sns_alert(f"Transformer: {table} Customer Name match Failure",
             #                f"""Customer name count in tenders : {count_customer_name}""")
-
-    if table in ['line_item', 'transactions', 'tenders', 'discounts']:
-        count_check_id = {df_transformed.where("check_id='' or check_id is null").count()}
 
     # Send alert if conditions are not met and exit
     if df_transformed.count() == df_archive.count() and count_transactiontimestamp == 0 and count_check_id == 0:

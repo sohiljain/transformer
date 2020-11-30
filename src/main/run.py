@@ -67,7 +67,7 @@ if __name__ == "__main__":
     elif args.module == "emr_process_gold":
 
         from main.emr_process_gold import process_gold
-        process_gold(spark, dg_config, args_dt)
+        process_gold(spark, dg_config)
         # send_sns_alert(subject='EMR Process Gold Failed', message=e)
     else:
         raise ValueError(f'Invalid or no module value passed: {args.module}')
