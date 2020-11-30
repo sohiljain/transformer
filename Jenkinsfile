@@ -52,7 +52,7 @@ pipeline {
       steps {
  	      sh '$(aws ecr get-login --no-include-email --region us-west-2)'
  	      sh 'aws s3 cp s3://bridg-devops-production/bin/deploy_bridg_service.py .'
-//           sh 'python3 deploy_bridg_service.py'
+          sh 'python3 deploy_bridg_service.py'
           sh 'pip install --target ./src pyyaml'
           sh 'pip install --target ./src python-gnupg==0.4.6'
           zip zipFile: 'build/dg_transformer_prepare.zip', archive: false, dir: 'src'
