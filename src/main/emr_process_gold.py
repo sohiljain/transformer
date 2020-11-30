@@ -52,7 +52,7 @@ def create_temptable(table_name, spark, dg_config):
 
 
 # Renaming the gold file from part file
-def format_gold_file(table, spark, dg_config, args_dt):
+def format_gold_file(table, spark, dg_config):
     try:
 
         logger.info(f'Executing query {dg_config.table_queries.get(table)}')
@@ -69,7 +69,7 @@ def format_gold_file(table, spark, dg_config, args_dt):
 
     # Record count validation call
     # Proceed writing to gold only if validation succeeds otherwise call sns_alert
-    count_check(spark, dg_config.s3a_bucket, dg_config.s3_archive_path, dg_config.s3_tmp_path, table, args_dt)
+    count_check(spark, dg_config.s3a_bucket, dg_config.s3_staging_path_1010, dg_config.s3_tmp_path, table)
 
     try:
         tmp_path_2 = f'{dg_config.s3_tmp_path}/{table}/partition_col'
@@ -83,6 +83,7 @@ def format_gold_file(table, spark, dg_config, args_dt):
 
             dt = key.split('/')[-2].split('=')[1]
 
+            #TODO s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}_{key}.psv.gz' - To make mulitple part files and remove repartition(1)
             s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}.psv.gz'
             if 'transaction_item' in s3_gold_temp:
                 s3_gold_temp = s3_gold_temp.replace('transaction_', 'line_')
@@ -100,7 +101,7 @@ def format_gold_file(table, spark, dg_config, args_dt):
 #TODO create README
 #TODO add between logic
 
-def process_gold(spark, dg_config: DgConfig, args_dt):
+def process_gold(spark, dg_config: DgConfig):
     try:
 
         spark.sql("set fs.s3a.multiobjectdelete.enable=false")
@@ -113,7 +114,7 @@ def process_gold(spark, dg_config: DgConfig, args_dt):
         for table in ['transactions', 'product_category', 'product', 'organization', 'tenders', 'transaction_item', 'discounts']:
             logger.info(f'Starting {table}')
             create_temptable(table, spark, dg_config)
-            format_gold_file(table, spark, dg_config, args_dt)
+            format_gold_file(table, spark, dg_config)
             logger.info(f'Finished {table}')
 
     finally:

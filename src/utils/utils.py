@@ -133,12 +133,12 @@ def gpg_decrytion(decryption_key=None, root_dir=None, bucket=None, gnupghome=Non
 
 
 # Records count check before storing at gold path
-def count_check(spark, s3a_bucket, s3_archive_path, s3_tmp_path, table, args_dt):
-    df_archive = spark.read.csv(f'{s3a_bucket}/{s3_archive_path}/{table}/bridg_{table}_{args_dt}*', sep='|',
+def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table):
+    df_archive = spark.read.csv(f'{s3a_bucket}/{s3_staging_path_1010}/{table}/', sep='|',
                                 header=True,
                                 nullValue='\\N')
-    table = table.replace('transaction_', 'line_').replace('trans_disc_xref', 'discounts')
-    df_transformed = spark.read.csv(f'{s3a_bucket}/{s3_tmp_path}/{table}/dt={args_dt}/part*', sep='|', header=True,
+    table = table.replace('trans_disc_xref', 'discounts')
+    df_transformed = spark.read.csv(f'{s3a_bucket}/{s3_tmp_path}/{table}/', sep='|', header=True,
                                     nullValue='\\N')
     logger.info(f'{table} test begins')
 
@@ -149,8 +149,9 @@ def count_check(spark, s3a_bucket, s3_archive_path, s3_tmp_path, table, args_dt)
     if table == 'tenders':
         count_customer_name = {df_transformed.select("customer_name").distinct().count()}
         if count_customer_name < 20000:
-            send_sns_alert(f"Transformer: {table} Customer Name match Failure",
-                           f"""Customer name count in tenders : {count_customer_name}""")
+            pass
+            # send_sns_alert(f"Transformer: {table} Customer Name match Failure",
+            #                f"""Customer name count in tenders : {count_customer_name}""")
 
     if table in ['line_item', 'transactions', 'tenders', 'discounts']:
         count_check_id = {df_transformed.where("check_id='' or check_id is null").count()}
@@ -161,8 +162,8 @@ def count_check(spark, s3a_bucket, s3_archive_path, s3_tmp_path, table, args_dt)
         logger.info(f'Gold - {df_transformed.count()}')
         logger.info(f'Archive - {df_archive.count()}')
     else:
-        send_sns_alert(f"Transformer: {table} Metrics Failure",
-                       f"""Transformed record count : {df_transformed.count()} Archive row count : {df_archive.count()}""")
+        # send_sns_alert(f"Transformer: {table} Metrics Failure",
+        #                f"""Transformed record count : {df_transformed.count()} Archive row count : {df_archive.count()}""")
         sys.exit(1)
 
 
