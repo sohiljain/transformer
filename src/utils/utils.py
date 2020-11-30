@@ -171,18 +171,19 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table):
     :param table: table name
     :return: appropriate success/failure message
     """
-    df_staging = spark.read.csv(f'{s3a_bucket}/{s3_staging_path_1010}/{table}/', sep='|',
-                                header=True,
-                                nullValue='\\N')
-    table = table.replace('trans_disc_xref', 'discounts')
     df_transformed = spark.read.csv(f'{s3a_bucket}/{s3_tmp_path}/{table}/', sep='|', header=True,
                                     nullValue='\\N')
+
+    table = table.replace('discounts', 'trans_disc_xref')
+    df_staging = spark.read.csv(f'{s3a_bucket}/{s3_staging_path_1010}/{table}/', sep='|',
+                                    header=True, nullValue='\\N')
+
     logger.info(f'{table} test begins')
 
     count_transactiontimestamp = df_transformed.where(
-        "transactiontimestamp='' or transactiontimestamp is null").count() if table == 'line_item' else 0
+        "transactiontimestamp='' or transactiontimestamp is null").count() if table == 'transaction_item' else 0
 
-    count_check_id = df_transformed.where("check_id='' or check_id is null").count() if table in ['line_item',
+    count_check_id = df_transformed.where("check_id='' or check_id is null").count() if table in ['transaction_item',
                     'transactions', 'tenders', 'discounts'] else 0
     try:
         # Customer-name check for tender table
@@ -197,13 +198,13 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table):
         if df_transformed.count() == df_staging.count() and count_transactiontimestamp == 0 and count_check_id == 0:
             logger.info("All validations successful")
             logger.info(f'Gold - {df_transformed.count()}')
-            logger.info(f'Archive - {df_staging.count()}')
+            logger.info(f'Staging - {df_staging.count()}')
         else:
             pass
             # Send alert if conditions are not met and exit
             # send_sns_alert(f"Transformer: {table} Metrics Failure",
             #                f"""Transformed record count : {df_transformed.count()} Archive row count : {df_staging.count()}""")
-            raise Exception(f"Count check failure for {table} Transformed record count : {df_transformed.count()} Archive row count : {df_staging.count()}")
+            raise Exception(f"Count check failure for {table} Transformed record count : {df_transformed.count()} Staging row count : {df_staging.count()}")
     except Exception as e:
         logger.error(f"Count check failure {e}")
         raise Exception(f"Count check failure {e}")

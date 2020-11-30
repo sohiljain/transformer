@@ -16,7 +16,7 @@ env_detail = os.environ['BRIDG_ENV_NAME'].split('-')[0]
 jobName = os.environ.get('BATCH_JOBNAME', 'cdp-dg-transformer')
 jobQueue = os.environ.get('BATCH_JOBQUEUE', 'cdp-que')
 jobDefinition = os.environ.get('BATCH_JOBDEFINITION', 'cdp-dg-transformer')
-date_value = dt.datetime.now().strftime('%Y%m%d') # Set default date as Today. This will be overridden.
+date_value = dt.datetime.now().strftime('%Y%m%d')  # Set default date as Today. This will be overridden.
 
 
 def lambda_handler(event, context):
@@ -41,19 +41,28 @@ def lambda_handler(event, context):
                     # send_sns_alert(return_msg, e)
                     logger.error(f"{return_msg} {e}", exc_info=True)
 
-            else:
-                for record in event['Records']:
-                    s3_key = record['Sns']['Message']['Records'][0]['s3']['object']['key']
-                    file_name = s3_key.split('/')[5]
-                    date_value = file_name.split('_')[2][:8]
-                    try:
-                        return_msg = trigger_batch_pgp_decrypt(date_value)
-                    except Exception as e:
-                        return_msg = "DG Transformer Batch failed"
-                        # send_sns_alert(return_msg, e)
-                        logger.error(f"{return_msg} {e}", exc_info=True)
+            elif message == "Manual":
+                date_value = record['Sns']['DateValue']
+                try:
+                    print("Success")
+                    return_msg = trigger_batch_pgp_decrypt(date_value)
+                except Exception as e:
+                    return_msg = "DG Transformer Batch failed"
+                    # send_sns_alert(return_msg, e)
+                    logger.error(f"{return_msg} {e}", exc_info=True)
 
-    #TODO: Entry Point manual backfill
+
+            else:
+                s3_key = record['Sns']['Message']['Records'][0]['s3']['object']['key']
+                file_name = s3_key.split('/')[5]
+                date_value = file_name.split('_')[2][:8]
+                try:
+                    return_msg = trigger_batch_pgp_decrypt(date_value)
+                except Exception as e:
+                    return_msg = "DG Transformer Batch failed"
+                    # send_sns_alert(return_msg, e)
+                    logger.error(f"{return_msg} {e}", exc_info=True)
+
 
     except Exception as e:
         return_msg = "Not appropriate event for DG Transformer"
@@ -71,7 +80,7 @@ def trigger_emr_process_gold():
     logger.info(f"{env_detail} - Starting Dollargeneral Transformer pipeline")
 
     try:
-        with open(f'/var/task/{env_detail}-emr.yml','r') as yml_file:
+        with open(f'/var/task/{env_detail}-emr.yml', 'r') as yml_file:
             emr_conf = yaml.safe_load(yml_file)
         cluster_id = connection.run_job_flow(**emr_conf)
         response = f"Cluster created with the step..{cluster_id['JobFlowId']}"
@@ -146,7 +155,6 @@ def trigger_batch_pgp_decrypt(date_value):
         raise Exception(f"Failed to start EMR job {e}")
 
     return batch_response_message
-
 
 # def send_sns_alert(subject, error_message):
 #     """
