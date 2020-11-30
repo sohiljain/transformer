@@ -4,7 +4,7 @@
 import boto3
 import os, logging, sys
 import datetime as dt
-from utils.utils import copy_staging_files, assert_file_exists, gpg_decrytion, send_sns_alert
+from utils.utils import copy_staging_files, assert_file_exists, gpg_decrytion, send_sns_alert, s3_delete_file
 from utils.config import DgConfig
 
 # create logger
@@ -17,15 +17,14 @@ s3_resource = boto3.resource('s3')
 s3_client = boto3.client('s3')
 
 
-# Download & Upload 1010 files from bridg-client-ftp to s3 transformed directory
 def process_1010(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y%m%d')):
     """
     Downloads recursively the given S3 path to the target directory.
+    Download & Upload 1010 files from bridg-client-ftp to s3 transformed staging/archive directory
     :param dg_config: config
-    :param client: S3 client to use.
-    :param bucket: the name of the bucket to download from
-    :param remote_1010_path: The S3 directory to download.
-    :param local_Path: the local directory to download the files to.
+    :param root_dir: root directory for decryption key
+    :param date_value: date of file to be processed
+    :return: appropriate success/failure message
     """
     gpg_1010 = gpg_decrytion('1010_decrypt_key.gpg', root_dir, dg_config.bucket, dg_config.gnupghome)
     paginator = s3_client.get_paginator('list_objects')
@@ -45,41 +44,43 @@ def process_1010(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y%
                 if not content['Key'].endswith('/'):
                     local_file_absolute_path = f'{dg_config.local_Path}/{filename}'
 
-                    try:
-                        # Make sure file does not exist
-                        assert_file_exists(dg_config.local_Path, filename)
+                    # Make sure file does not exist
+                    assert_file_exists(dg_config.local_Path, filename)
 
-                        # Download file to local path
-                        s3_client.download_file(dg_config.bucket, content['Key'], local_file_absolute_path)
-                        logger.info(f'{local_file_absolute_path} downloaded')
+                    # Download file to local path
+                    s3_client.download_file(dg_config.bucket, content['Key'], local_file_absolute_path)
+                    logger.info(f'{local_file_absolute_path} downloaded')
 
-                        # Decrypt file
-                        with open(local_file_absolute_path, 'rb') as f:
-                            gpg_1010.decrypt_file(f, passphrase=dg_config.passphrase, output="tmp.csv.gz")
-                        logger.info(f'{local_file_absolute_path} decrypted to tmp.csv.gz')
-                        os.remove(local_file_absolute_path)
+                    # Decrypt file
+                    with open(local_file_absolute_path, 'rb') as f:
+                        gpg_1010.decrypt_file(f, passphrase=dg_config.passphrase, output="tmp.csv.gz")
+                    logger.info(f'{local_file_absolute_path} decrypted to tmp.csv.gz')
+                    os.remove(local_file_absolute_path)
 
-                        # Upload file to staging by date partition
-                        partition_col = filename.split('_')[-1][0:8]
-                        s3_upload_file_path = f'''{dg_config.s3_staging_path_1010}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
-                        s3_resource.meta.client.upload_file(Filename='tmp.csv.gz', Bucket=dg_config.bucket,
-                                                            Key=s3_upload_file_path)
-                        logger.info(f'tmp.csv.gz uploaded to {s3_upload_file_path}')
+                    # Upload file to staging by date partition
+                    partition_col = filename.split('_')[-1][0:8]
+                    s3_upload_file_path = f'''{dg_config.s3_staging_path_1010}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
+                    s3_resource.meta.client.upload_file(Filename='tmp.csv.gz', Bucket=dg_config.bucket,
+                                                        Key=s3_upload_file_path)
+                    logger.info(f'tmp.csv.gz uploaded to {s3_upload_file_path}')
 
-                        # Copying file from staging to archive directory to have a backup
-                        copy_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
-                                           dg_config.bucket, dg_config.s3_archive_path)
-                    except Exception as e:
-                        logger.error(f'{e} Error in uploading {filename}')
+                    # Copying file from staging to archive directory to have a backup
+                    copy_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
+                                       dg_config.bucket, dg_config.s3_archive_path)
 
     # Delete file from local
     assert_file_exists(dg_config.local_Path, 'tmp.csv.gz')
-
     logger.info("1010 data processed to staging")
 
 
-# Download & Upload Aurus files from bridg-client-ftp to s3 transformed directory
 def process_aurus(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y%m%d')):
+    """
+    Download & Upload Aurus files from bridg-client-ftp to s3 transformed staging/archive directory
+    :param dg_config: config
+    :param root_dir: root directory
+    :param date_value: date of file to be processed
+    :return: appropriate success/failure message
+    """
     gpg_aurus = gpg_decrytion('aurus_decrypt_key.gpg', root_dir, dg_config.bucket, dg_config.gnupghome)
     paginator = s3_client.get_paginator('list_objects')
 
@@ -90,66 +91,81 @@ def process_aurus(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y
             filename = content['Key'].split('/')[-1]
             folder = content['Key'].split('/')[-3]
 
-
             # Skip paths ending in /
             if not content['Key'].endswith('/'):
                 local_file_absolute_path = f'{dg_config.local_Path}/{filename}'
 
                 s3_upload_file_path = f'''{dg_config.s3_staging_path}/{folder.lower()}/{filename.replace('.pgp', '')}'''
-                try:
-                    # Make sure directories exist and file doesnot exist
-                    assert_file_exists(dg_config.local_Path, filename)
 
-                    # Aurus - Download file to local path
-                    s3_client.download_file(dg_config.bucket, content['Key'], local_file_absolute_path)
-                    logger.info(f'{local_file_absolute_path} downloaded')
+                # Make sure directories exist and file doesnot exist
+                assert_file_exists(dg_config.local_Path, filename)
 
-                    # Decrypt aurus file and Upload to tranformed s3 directory
-                    with open(local_file_absolute_path, 'rb') as f:
-                        gpg_aurus.decrypt_file(f, passphrase=dg_config.passphrase, output="tmp.csv")
+                # Aurus - Download file to local path
+                s3_client.download_file(dg_config.bucket, content['Key'], local_file_absolute_path)
+                logger.info(f'{local_file_absolute_path} downloaded')
 
-                    logger.info(f'{local_file_absolute_path} decrypted to tmp.csv')
+                # Decrypt aurus file and Upload to tranformed s3 directory
+                with open(local_file_absolute_path, 'rb') as f:
+                    gpg_aurus.decrypt_file(f, passphrase=dg_config.passphrase, output="tmp.csv")
 
-                    # Upload file to s3
-                    s3_resource.meta.client.upload_file(Filename='tmp.csv', Bucket=dg_config.bucket,
-                                                        Key=s3_upload_file_path)
-                    logger.info(f'tmp.csv uploaded to {s3_upload_file_path}')
-                except:
-                    logger.error(f'Bad file {filename}')
+                logger.info(f'{local_file_absolute_path} decrypted to tmp.csv')
+
+                # Upload file to s3
+                s3_resource.meta.client.upload_file(Filename='tmp.csv', Bucket=dg_config.bucket,
+                                                    Key=s3_upload_file_path)
+                logger.info(f'tmp.csv uploaded to {s3_upload_file_path}')
 
 
 def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir):
-    # Download & Upload Aurus/1010 files from bridg-client-ftp to s3 transformed directory
-    for date_arg in args_dt.split(','):
-        logger.info(f'Starting process for date - {args_dt}')
-        process_aurus(dg_config, root_dir, date_arg)
-        process_1010(dg_config, root_dir, date_arg)
+    """
+    Serially download & upload Aurus/1010 files from bridg-client-ftp to s3 transformed directory
+    1. Download raw Aurus/1010 files from the ftp bucket according to args_dt date/date_range provided
+    2. PGP-Decrypt the file using python library
+    3. Upload the decrypted file to s3 transformed staging directory for gold processing
+    4. Upload the decrypted file to s3 transformed archive directory for backup
+    :param dg_config: config
+    :param args_dt: date/date_range of file to be processed
+    :param root_dir: root directory
+    :return: sns alert to start emr job
+    """
 
-    send_sns_alert(subject="batch_pgp_decrypt", message="Start EMR Process Gold")
+    try:
+        # Start job according to date_pattern
+        # 1. dt1,dt2,dt3... process multiple dates by splitting on comma
+        # 2. dt1:dt2 - process all dates between dt1 and dt2 inclusive on both sides
+        # 3. dt - process a single date
 
+        # pattern-1
+        if ',' in args_dt:
+            for date_arg in args_dt.split(','):
+                logger.info(f'Starting process for date - {args_dt}')
+                process_aurus(dg_config, root_dir, date_arg)
+                process_1010(dg_config, root_dir, date_arg)
 
-# if __name__ == '__main__':
+        # pattern-2
+        elif ':' in args_dt:
+            start_date = dt.datetime.strptime(args_dt.split(':')[0], '%Y%m%d')
+            end_date = dt.datetime.strptime(args_dt.split(':')[1], '%Y%m%d')
+            delta = end_date - start_date
+            for i in range(delta.days + 1):  # Adding 1 to include end_date
+                logger.info(f'Starting process for date - {start_date}')
+                date_arg = (str(start_date)).split(' ')[0].replace('-', '')
+                process_aurus(dg_config, root_dir, date_arg)
+                process_1010(dg_config, root_dir, date_arg)
+                start_date += dt.timedelta(days=1)
 
-# my_parser = argparse.ArgumentParser(description='Starting transformer decrypt pipeline')
-# my_parser.add_argument('--date', metavar='', type=str, help='Date', required=False, default=dt.datetime.now().strftime('%Y%m%d'))
-# my_parser.add_argument('--root-dir', type=str, help='Root Directory of project', required=False, default='/code')
-# args = my_parser.parse_args()
-# args_dt = args.date
-# root_dir = args.root_dir
-# logger.info(f'Root directory has been set as {root_dir}')
-#
-# with open(f'{root_dir}/config/transformer.yml', 'r') as yml_file:
-#     cfg = yaml.safe_load(yml_file)
+        # pattern-3
+        else:
+            logger.info(f'Starting process for date - {args_dt}')
+            process_aurus(dg_config, root_dir, args_dt)
+            process_1010(dg_config, root_dir, args_dt)
 
-# table_list = cfg.get('table_list', '')
-# bucket = cfg.get('bucket', '')
-# s3_staging_path = cfg.get('s3_staging_path', '')
-# s3_staging_path_1010 = cfg.get('s3_staging_path_1010', '')
-# s3_tmp_path = cfg.get('s3_tmp_path', '')
-# s3_archive_path = cfg.get('s3_archive_path', '')
-# remote_1010_path = cfg.get('remote_1010_path','')
-# remote_Aurus_path = cfg.get('remote_Aurus_path','')
-# local_Path = cfg.get('local_Path','')
-# gnupghome = cfg.get('gnupghome','')
-# secret_name = cfg.get('secret', '')
-# passphrase = Secret(secret_name).get_passphrase()
+        # send sns alert to start emr job
+        # send_sns_alert(subject="batch_pgp_decrypt", message="Start EMR Process Gold")
+
+    except Exception as e:
+        # send_sns_alert("DG Transformer: PGP Decrypt failed", e)
+        logger.error(f"DG Transformer: PGP Decrypt failed {e}", exc_info=True)
+        s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
+        logger.info(f"Cleaned up staging file path {dg_config.s3_staging_path_1010}")
+        raise Exception(f"DG Transformer: PGP Decrypt failed {e}")

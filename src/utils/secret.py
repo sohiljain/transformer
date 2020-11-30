@@ -1,4 +1,5 @@
 # Copyright (c) 2020 Bridg Inc. All rights reserved.
+# @author Sohil Jain <sohil.jain@bridg.com>
 
 import json
 import boto3
@@ -20,7 +21,6 @@ class Secret:
     """
     This class provides methods to read from AWS Secrets Manager
     It returns objects based on the secret_name provided to the constructor
-    @author Sohil Jain <sohil.jain@bridg.com>
     """
 
     def __init__(self, secret_name: str, secret_json: dict = None, region_name: str = "us-west-2"):

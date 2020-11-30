@@ -1,8 +1,11 @@
+# Copyright (c) 2020 Bridg Inc. All rights reserved.
+# @author Sohil Jain <sohil.jain@bridg.com>
+
 import logging
 import sys
 import boto3
 from pyspark.sql.functions import *
-from utils.utils import get_matching_s3_keys, s3_delete_file, count_check
+from utils.utils import get_matching_s3_keys, s3_delete_file, count_check, send_sns_alert
 from utils.config import DgConfig
 
 s3_resource = boto3.resource('s3')
@@ -14,8 +17,14 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-#Creating temporary tables for joining data
 def create_temptable(table_name, spark, dg_config):
+    """
+    Creating temporary tables for joining data
+    :param table_name: table name
+    :param spark: spark
+    :param dg_config: config
+    :return: appropriate success/failure message
+    """
     table_path = f'{dg_config.s3a_bucket}/{dg_config.s3_staging_path_1010}/{table_name}/'
     logger.info(f'Creating table dg_{table_name} on {table_path}')
 
@@ -51,10 +60,15 @@ def create_temptable(table_name, spark, dg_config):
     logger.info(f'Created temp view for dg_{table_name}')
 
 
-# Renaming the gold file from part file
 def format_gold_file(table, spark, dg_config):
+    """
+    Renaming the gold file from part file
+    :param table: table name
+    :param spark: spark
+    :param dg_config: config
+    :return: appropriate success/failure message
+    """
     try:
-
         logger.info(f'Executing query {dg_config.table_queries.get(table)}')
         df = spark.sql(dg_config.table_queries.get(table))
 
@@ -83,7 +97,7 @@ def format_gold_file(table, spark, dg_config):
 
             dt = key.split('/')[-2].split('=')[1]
 
-            #TODO s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}_{key}.psv.gz' - To make mulitple part files and remove repartition(1)
+            #TODO s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}_{key}.psv.gz' - To make mulitple part files and remove repartition - Sid
             s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}.psv.gz'
             if 'transaction_item' in s3_gold_temp:
                 s3_gold_temp = s3_gold_temp.replace('transaction_', 'line_')
@@ -96,14 +110,17 @@ def format_gold_file(table, spark, dg_config):
     except Exception as e:
         logger.error(f'{e} Unable to rename file')
 
-#TODO add sns alerts
-#TODO add comments and copyrithgs
 #TODO create README
-#TODO add between logic
+
 
 def process_gold(spark, dg_config: DgConfig):
+    """
+    Starting gold data processing
+    :param spark: spark context
+    :param dg_config: config
+    :return: appropriate success/failure message
+    """
     try:
-
         spark.sql("set fs.s3a.multiobjectdelete.enable=false")
         logger.info('spark initiated')
 
@@ -117,33 +134,14 @@ def process_gold(spark, dg_config: DgConfig):
             format_gold_file(table, spark, dg_config)
             logger.info(f'Finished {table}')
 
+    except Exception as e:
+        # send_sns_alert("DG Transformer: EMR processing failed", e)
+        logger.error(f"DG Transformer: EMR processing failed {e}", exc_info=True)
+        raise Exception(f"DG Transformer: EMR processing failed {e}")
+
     finally:
         s3_delete_file(dg_config.s3_tmp_path, dg_config.bucket)
         logger.info(f"Deleted temporary file path {dg_config.s3_tmp_path}")
         s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
         logger.info(f"Deleted staging file path {dg_config.s3_staging_path_1010}")
-
-        #TODO sns alert
-
-# if __name__ == '__main__':
-
-    # try:
-    #     my_parser = argparse.ArgumentParser(description='Starting transformer gold pipeline')
-    #     my_parser.add_argument('--date', metavar='', type=str, help='Date', required=False, default=None)
-    #     args = my_parser.parse_args()
-    #     args_dt = args.date or dt.datetime.now().strftime('%Y%m%d')
-    #     with open(f'{root_dir}/config/transformer.yml', 'r') as yml_file:
-    #         cfg = yaml.safe_load(yml_file)
-    #
-    #     logging.info("configuration file passed for = {}".format(args.config))
-    #     table_list = cfg.get('table_list', '')
-    #     bucket = cfg.get('bucket', '')
-    #     s3a_bucket = cfg.get('s3a_bucket','')
-    #     s3_staging_path = cfg.get('s3_staging_path','')
-    #     s3_staging_path_1010 = cfg.get('s3_staging_path_1010','')
-    #     s3_tmp_path = cfg.get('s3_tmp_path','')
-    #     s3_gold_path= cfg.get('s3_gold_path','')
-    #     s3_archive_path = cfg.get('s3_archive_path','')
-    #     table_queries = cfg.get('table_queries', '')
-    #     cols = cfg.get('cols', '')
 

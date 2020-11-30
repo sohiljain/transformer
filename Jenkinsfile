@@ -1,3 +1,6 @@
+// # Copyright (c) 2020 Bridg Inc. All rights reserved.
+// # @author Sohil Jain <sohil.jain@bridg.com>
+
 pipeline {
   parameters {
     booleanParam(name: "DEPLOY_DG_TRANSFORMER_TO_TOWERBRIDG",

@@ -1,5 +1,8 @@
+# Copyright (c) 2020 Bridg Inc. All rights reserved.
+# @author Sohil Jain <sohil.jain@bridg.com>
+
 Name: dev-cdp-dg-transformer-emr-cluster
-LogUri: "s3://bridg-client-ftp/dollargeneral/transformed/logs" #TODO Change this
+LogUri: "s3://bridg-client-ftp/dollargeneral/transformed/logs" #TODO Change this - Sid
 ReleaseLabel: "emr-5.27.0"
 Applications:
     - Name: "Spark"
