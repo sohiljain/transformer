@@ -5,24 +5,13 @@
 This script decides what ETL to perform based on the parameters passed
 '''
 import argparse
-import logging, os
+import logging
 from datetime import datetime
-#os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages com.amazonaws:aws-java-sdk-pom,org.apache.hadoop:hadoop-aws --conf spark.hadoop.fs.s3a.endpoint=s3.us-west-2.amazonaws.com' # - Uncomment this to run on local -
-from pyspark.sql import SparkSession
-
-spark = SparkSession.builder.getOrCreate()
-spark.sparkContext.addFile('s3://bridg-binary-registry/bridg-dollargeneral-transformer/config/dev-transformer.yml')
-spark.sparkContext.addPyFile('s3://bridg-binary-registry/bridg-dollargeneral-transformer/dg_transformer_prepare.zip')
-
-from main.emr_process_gold import process_gold
-from main.pgp_decrypt_upload import pgp_decrypt
-from utils.config import DgConfig
 import yaml
 import boto3
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(message)s')
-
 
 if __name__ == "__main__":
     logging.info("Starting Dollargeneral Transformer pipeline")
@@ -43,22 +32,17 @@ if __name__ == "__main__":
     config_file = f'{args.env}-transformer.yml'
     config_file_path = f'{root_dir}/config/{config_file}'
     logging.info(f'Loading config from {config_file_path}')
+    logging.info(f'Root directory has been set as {root_dir}')
 
     if args.module == "emr_process_gold":
+        from pyspark.sql import SparkSession
+        spark = SparkSession.builder.getOrCreate()
         s3 = boto3.client('s3', region_name='us-west-2')
-        s3.download_file('bridg-binary-registry', f'bridg-dollargeneral-transformer/config/{config_file}', config_file)
+        s3_bucket = root_dir.replace('s3://', '').split('/')[0]
+        s3_key = root_dir.replace('s3://', '').split('/')[1]
+        spark.sparkContext.addPyFile(f'{root_dir}/dg_transformer_prepare.zip')
+        s3.download_file(s3_bucket, f'{s3_key}/config/{config_file}', config_file)
         config_file_path = config_file
-
-    logging.info(f'Root directory has been set as {root_dir}')
-    logging.info(f'cwd - {os.getcwd()}')
-    try:
-        for root, dirs, files in os.walk("/mnt"):
-            path = root.split(os.sep)
-            print((len(path) - 1) * '---', os.path.basename(root))
-            for file in files:
-                print(len(path) * '---', file)
-    except Exception as e:
-        logging.info(e)
 
     with open(config_file_path, 'r') as yml_file:
         yaml_cfg = yaml.safe_load(yml_file)
@@ -67,11 +51,13 @@ if __name__ == "__main__":
         yaml_cfg['gnupghome'] = f'{root_dir}/gpghome'
         yaml_cfg['local_Path'] = f"{root_dir}/{yaml_cfg['local_Path']}"
 
+    from utils.config import DgConfig
     dg_config: DgConfig = DgConfig(yaml_cfg)
     logging.info("configuration file passed for = {}".format(config_file_path))
 
     if args.module == "batch_pgp_decrypt":
         try:
+            from main.pgp_decrypt_upload import pgp_decrypt
             pgp_decrypt(dg_config, args_dt, root_dir)
 
         except Exception as e:
@@ -79,6 +65,8 @@ if __name__ == "__main__":
             # send_sns_alert(subject='PGP Decrypt Batch Failed', message=e)
 
     elif args.module == "emr_process_gold":
+
+        from main.emr_process_gold import process_gold
         process_gold(spark, dg_config, args_dt)
         # send_sns_alert(subject='EMR Process Gold Failed', message=e)
     else:
