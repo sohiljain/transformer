@@ -149,7 +149,7 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table):
                     'transactions', 'tenders', 'discounts'] else 0
 
     if table == 'tenders':
-        count_customer_name = {df_transformed.select("customer_name").distinct().count()}
+        count_customer_name = df_transformed.select("customer_name").distinct().count()
         if count_customer_name < 20000:
             pass
             # send_sns_alert(f"Transformer: {table} Customer Name match Failure",
