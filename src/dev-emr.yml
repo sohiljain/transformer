@@ -76,13 +76,13 @@ Steps:
         - spark-submit
         - --py-files
         - s3://bridg-binary-registry/bridg-dollargeneral-transformer/dg_transformer_prepare.zip
-        - --files
-        - s3://bridg-binary-registry/bridg-dollargeneral-transformer/config/dev-transformer.yml
         - s3://bridg-binary-registry/bridg-dollargeneral-transformer/main/run.py
         - --module
         - emr_process_gold
         - --env
         - dev
+        - --root-dir
+        - s3://bridg-binary-registry/bridg-dollargeneral-transformer
 VisibleToAllUsers: True
 JobFlowRole: "EMR_EC2_DefaultRole"
 ServiceRole: "EMR_DefaultRole"
