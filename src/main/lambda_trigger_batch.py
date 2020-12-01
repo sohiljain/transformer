@@ -32,6 +32,7 @@ def lambda_handler(event, context):
         # Check the sns event and trigger batch vs emr appropriately
         for record in event['Records']:
             message = record['Sns']['Message']
+            checks3flag = False
 
             if message == "Start EMR Process Gold":
                 try:
@@ -42,29 +43,22 @@ def lambda_handler(event, context):
                     logger.error(f"{return_msg} {e}", exc_info=True)
 
             elif message == "Manual":
-                date_value = record['Sns']['DateValue']
-                if ':' in date_value:
-                    start_date = dt.datetime.strptime(date_value.split(':')[0], '%Y%m%d')
-                    end_date = dt.datetime.strptime(date_value.split(':')[1], '%Y%m%d')
-                    delta = end_date - start_date
-                    try:
-                        for i in range(delta.days + 1): # Adding 1 to include end_date
-                            logger.info(f'Starting Batch for date - {start_date}')
-                            date_arg = (str(start_date)).split(' ')[0].replace('-', '')
-                            return_msg = trigger_batch_pgp_decrypt(date_arg)
-                            start_date += dt.timedelta(days=1)
+                try:
+                    date_value = record['Sns']['DateValue']
+                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag)
 
-                    except Exception as e:
-                        return_msg = "DG Transformer Batch failed"
-                        # send_sns_alert(return_msg, e)
-                        logger.error(f"{return_msg} {e}", exc_info=True)
+                except Exception as e:
+                    return_msg = "DG Transformer Batch failed"
+                    # send_sns_alert(return_msg, e)
+                    logger.error(f"{return_msg} {e}", exc_info=True)
 
             else:
                 s3_key = record['Sns']['Message']['Records'][0]['s3']['object']['key']
                 file_name = s3_key.split('/')[5]
                 date_value = file_name.split('_')[2][:8]
+                checks3flag =True
                 try:
-                    return_msg = trigger_batch_pgp_decrypt(date_value)
+                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag)
                 except Exception as e:
                     return_msg = "DG Transformer Batch failed"
                     # send_sns_alert(return_msg, e)
@@ -131,7 +125,7 @@ def check_s3_files(date_value):
     return return_flag
 
 
-def trigger_batch_pgp_decrypt(date_value):
+def trigger_batch_pgp_decrypt(date_value, checks3flag):
     """
     Code to start pgp_decrypt batch job
     :param date_value: date/date_range of file to be processed
@@ -139,8 +133,9 @@ def trigger_batch_pgp_decrypt(date_value):
     """
 
     # check if S3 1010 files are present for the datevalue
-    if not check_s3_files(date_value):
-        sys.exit(0)
+    if checks3flag == True:
+        if not check_s3_files(date_value):
+            sys.exit(0)
 
     # starting pgp_decrypt batch job
     batch = boto3.client('batch')
