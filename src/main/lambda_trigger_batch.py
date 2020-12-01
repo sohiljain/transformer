@@ -43,14 +43,21 @@ def lambda_handler(event, context):
 
             elif message == "Manual":
                 date_value = record['Sns']['DateValue']
-                try:
-                    print("Success")
-                    return_msg = trigger_batch_pgp_decrypt(date_value)
-                except Exception as e:
-                    return_msg = "DG Transformer Batch failed"
-                    # send_sns_alert(return_msg, e)
-                    logger.error(f"{return_msg} {e}", exc_info=True)
+                if ':' in date_value:
+                    start_date = dt.datetime.strptime(date_value.split(':')[0], '%Y%m%d')
+                    end_date = dt.datetime.strptime(date_value.split(':')[1], '%Y%m%d')
+                    delta = end_date - start_date
+                    try:
+                        for i in range(delta.days + 1): # Adding 1 to include end_date
+                            logger.info(f'Starting Batch for date - {start_date}')
+                            date_arg = (str(start_date)).split(' ')[0].replace('-', '')
+                            return_msg = trigger_batch_pgp_decrypt(date_arg)
+                            start_date += dt.timedelta(days=1)
 
+                    except Exception as e:
+                        return_msg = "DG Transformer Batch failed"
+                        # send_sns_alert(return_msg, e)
+                        logger.error(f"{return_msg} {e}", exc_info=True)
 
             else:
                 s3_key = record['Sns']['Message']['Records'][0]['s3']['object']['key']
