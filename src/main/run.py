@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # Start batch_pgp_decrypt or emr_process_gold based on module passed in lambda
     if args.module == "batch_pgp_decrypt":
         from main.pgp_decrypt_upload import pgp_decrypt
-        pgp_decrypt(dg_config, args_dt, root_dir)
+        pgp_decrypt(dg_config, args_dt, root_dir, args.env)
     elif args.module == "emr_process_gold":
         from main.emr_process_gold import process_gold
         process_gold(spark, dg_config)

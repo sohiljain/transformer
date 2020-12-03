@@ -116,7 +116,7 @@ def process_aurus(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y
                 logger.info(f'tmp.csv uploaded to {s3_upload_file_path}')
 
 
-def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir):
+def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env):
     """
     Serially download & upload Aurus/1010 files from bridg-client-ftp to s3 transformed directory
     1. Download raw Aurus/1010 files from the ftp bucket according to args_dt date/date_range provided
@@ -161,7 +161,8 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir):
             process_1010(dg_config, root_dir, args_dt)
 
         # send sns alert to start emr job
-        # send_sns_alert(subject="batch_pgp_decrypt", message="Start EMR Process Gold")
+        send_sns_alert(subject="batch_pgp_decrypt",
+                       message={"Action": "Start EMR Process Gold", "EnvDetail": env})
 
     except Exception as e:
         # send_sns_alert("DG Transformer: PGP Decrypt failed", e)
