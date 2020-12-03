@@ -35,15 +35,15 @@ Both Batch and EMR Job are triggered inside lambda and starter script is run.py
 For Backfill: The date range needs to be provided along with the message as 'Manual' in record event.
 Example for sample record event:
 
+- This event can be set directly on lambda
+- It will point to prod/dev configuration file as specified in EnvDetail of json
+- the dev configuration files can be used to point to required file paths or enhanced EMR cluster
+
 date_value can be of three types -
 1. dt1:dt2 - Backfill all dates between dt1 and dt2 inclusive
 2. dt1,dt2,dt3.. - Backfill all dates specified by comma delimiter
 3. dt - Backfill for date dt
 
 ##### Example event -
-    {"Records":[{"Sns":{"Message":"Manual","DateValue":"20200101:20200105"}}]}
+    {"Records":[{"Sns":{"Message":{"Action":"Manual","DateValue":"20200101:20200105","EnvDetail":"dev"}}}]}
 
-
-#Run on dev
-1. put env_detail as dev and pass DEV environment files as mentioned above
-2. run lamdda - put env_detail as dev and pass DEV environment files

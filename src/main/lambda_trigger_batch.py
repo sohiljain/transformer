@@ -33,6 +33,9 @@ def lambda_handler(event, context):
         # Check the sns event and trigger batch vs emr appropriately
         for record in event['Records']:
             message = record['Sns']['Message']
+            if isinstance(message, str):
+                message = json.loads(message)
+
             action = message.get('Action', None)
             checks3flag = False
             logger.info(f'SNS Action - {action}')
