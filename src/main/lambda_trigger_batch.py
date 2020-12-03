@@ -5,20 +5,21 @@ import json
 import os, boto3, logging, yaml
 import datetime as dt
 from utils.utils import send_sns_alert
-# create logger
+# Create logger
 import sys
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-env_detail = os.environ['BRIDG_ENV_NAME'].split('-')[0]
+# Set env values
 jobName = os.environ.get('BATCH_JOBNAME', 'cdp-dg-transformer')
 jobQueue = os.environ.get('BATCH_JOBQUEUE', 'cdp-que')
 jobDefinition = os.environ.get('BATCH_JOBDEFINITION', 'cdp-dg-transformer')
 date_value = dt.datetime.now().strftime('%Y%m%d')  # Set default date as Today. This will be overridden.
 
 
+# Lambda declaration
 def lambda_handler(event, context):
     """
     # Entry point for DG transformer
@@ -32,38 +33,48 @@ def lambda_handler(event, context):
         # Check the sns event and trigger batch vs emr appropriately
         for record in event['Records']:
             message = record['Sns']['Message']
+            action = message.get('Action', None)
             checks3flag = False
+            logger.info(f'SNS Action - {action}')
 
-            if message == "Start EMR Process Gold":
+            # Setting env variable as dev/prod
+            if 'EnvDetail' in message:
+                env_detail = message['EnvDetail']
+            else:
+                env_detail = os.environ['BRIDG_ENV_NAME'].split('-')[0]
+
+            if action == "Start EMR Process Gold":
                 try:
-                    return_msg = trigger_emr_process_gold()
+                    return_msg = trigger_emr_process_gold(env_detail)
                 except Exception as e:
                     return_msg = "DG Transformer EMR failed"
                     # send_sns_alert(return_msg, e)
                     logger.error(f"{return_msg} {e}", exc_info=True)
 
-            elif message == "Manual":
+            elif action == "Manual":
                 try:
-                    date_value = record['Sns']['DateValue']
-                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag)
+                    date_value = message['DateValue']
+                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail)
 
                 except Exception as e:
-                    return_msg = "DG Transformer Batch failed"
+                    return_msg = f"DG Transformer Batch failed. Either batch failed or incorrect event passed"
                     # send_sns_alert(return_msg, e)
                     logger.error(f"{return_msg} {e}", exc_info=True)
 
             else:
+                # This is the default daily prod run case. We want to check if all s3 files are present before starting
+                checks3flag = True
+
                 s3_key = record['Sns']['Message']['Records'][0]['s3']['object']['key']
                 file_name = s3_key.split('/')[5]
                 date_value = file_name.split('_')[2][:8]
-                checks3flag =True
+
                 try:
-                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag)
+                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail)
                 except Exception as e:
                     return_msg = "DG Transformer Batch failed"
                     # send_sns_alert(return_msg, e)
                     logger.error(f"{return_msg} {e}", exc_info=True)
-
 
     except Exception as e:
         return_msg = "Not appropriate event for DG Transformer"
@@ -72,16 +83,16 @@ def lambda_handler(event, context):
     return return_msg
 
 
-def trigger_emr_process_gold():
+def trigger_emr_process_gold(env_emr):
     """
     Trigger EMR cluster to process the staging files
     :return: Success/Failure message
     """
     connection = boto3.client('emr', region_name='us-west-2')
-    logger.info(f"{env_detail} - Starting Dollargeneral Transformer pipeline")
+    logger.info(f"{env_emr} - Starting Dollargeneral Transformer pipeline")
 
     try:
-        with open(f'/var/task/{env_detail}-emr.yml', 'r') as yml_file:
+        with open(f'/var/task/{env_emr}-emr.yml', 'r') as yml_file:
             emr_conf = yaml.safe_load(yml_file)
         cluster_id = connection.run_job_flow(**emr_conf)
         response = f"Cluster created with the step..{cluster_id['JobFlowId']}"
@@ -125,9 +136,10 @@ def check_s3_files(date_value):
     return return_flag
 
 
-def trigger_batch_pgp_decrypt(date_value, checks3flag):
+def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch):
     """
     Code to start pgp_decrypt batch job
+    :param env_batch: dev/prod
     :param date_value: date/date_range of file to be processed
     :return: Appropriate success/failure message
     """
@@ -139,7 +151,7 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag):
 
     # starting pgp_decrypt batch job
     batch = boto3.client('batch')
-    command = f'--module batch_pgp_decrypt --date {date_value} --env {env_detail}'
+    command = f'--module batch_pgp_decrypt --date {date_value} --env {env_batch}'
     command = command.split()
 
     try:
