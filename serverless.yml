@@ -114,7 +114,7 @@ resources:
                   Action:
                     - batch:SubmitJob
                   Resource:
-                    - *
+                    - "*"
                 - Effect: Allow
                   Action:
                     - elasticmapreduce:*
