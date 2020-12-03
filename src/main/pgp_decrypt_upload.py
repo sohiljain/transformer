@@ -2,7 +2,7 @@
 # @author Sohil Jain <sohil.jain@bridg.com>
 
 import boto3
-import os, logging, sys
+import os, logging, sys, json
 import datetime as dt
 from utils.utils import copy_staging_files, assert_file_exists, gpg_decrytion, send_sns_alert, s3_delete_file
 from utils.config import DgConfig
@@ -160,9 +160,13 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env):
             process_aurus(dg_config, root_dir, args_dt)
             process_1010(dg_config, root_dir, args_dt)
 
+        msg = {"Action": "Start EMR Process Gold", "EnvDetail": env}
+        json_msg = json.dumps(msg)
+        logger.info(f"Sending message - {json_msg} to SNS")
+
         # send sns alert to start emr job
         send_sns_alert(subject="batch_pgp_decrypt",
-                       message={"Action": "Start EMR Process Gold", "EnvDetail": env})
+                       message=json_msg)
 
     except Exception as e:
         # send_sns_alert("DG Transformer: PGP Decrypt failed", e)
