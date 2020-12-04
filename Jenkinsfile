@@ -101,7 +101,7 @@ pipeline {
           zip zipFile: 'src/dg_transformer_prepare.zip', archive: false, dir: 'src'
           sh 'aws s3 rm s3://bridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
           sh 'aws s3 cp src s3://bridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
-          sh 'serverless deploy --stage prod --verbose'
+          sh 'serverless deploy --stage production --verbose'
       }
     }
 
