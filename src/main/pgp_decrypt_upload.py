@@ -33,40 +33,50 @@ def process_1010(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y%
                   'trans_disc_xref', 'discounts']
 
     for folder in list_files:
-        for result in paginator.paginate(Bucket=dg_config.bucket,
-                                         Prefix=f'{dg_config.remote_1010_path}/{folder.title()}/bridg_{folder}_{date_value}'):
-            # Download each file individually
-            for content in result['Contents']:
+        prefix = f'{dg_config.remote_1010_path}/{folder.title()}/bridg_{folder}_{date_value}'
+        logger.info(f'Downloading from {prefix}')
 
-                filename = content['Key'].split('/')[-1]
+        try:
+            for result in paginator.paginate(Bucket=dg_config.bucket,Prefix=prefix):
+                # Download each file individually
+                for content in result['Contents']:
 
-                # Skip paths ending in /
-                if not content['Key'].endswith('/'):
-                    local_file_absolute_path = f'{dg_config.local_Path}/{filename}'
+                    filename = content['Key'].split('/')[-1]
 
-                    # Make sure file does not exist
-                    assert_file_exists(dg_config.local_Path, filename)
+                    try:
+                        # Skip paths ending in /
+                        if not content['Key'].endswith('/'):
+                            local_file_absolute_path = f'{dg_config.local_Path}/{filename}'
 
-                    # Download file to local path
-                    s3_client.download_file(dg_config.bucket, content['Key'], local_file_absolute_path)
-                    logger.info(f'{local_file_absolute_path} downloaded')
+                            # Make sure file does not exist
+                            assert_file_exists(dg_config.local_Path, filename)
 
-                    # Decrypt file
-                    with open(local_file_absolute_path, 'rb') as f:
-                        gpg_1010.decrypt_file(f, passphrase=dg_config.passphrase, output="tmp.csv.gz")
-                    logger.info(f'{local_file_absolute_path} decrypted to tmp.csv.gz')
-                    os.remove(local_file_absolute_path)
+                            # Download file to local path
+                            s3_client.download_file(dg_config.bucket, content['Key'], local_file_absolute_path)
+                            logger.info(f'{local_file_absolute_path} downloaded')
 
-                    # Upload file to staging by date partition
-                    partition_col = filename.split('_')[-1][0:8]
-                    s3_upload_file_path = f'''{dg_config.s3_staging_path_1010}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
-                    s3_resource.meta.client.upload_file(Filename='tmp.csv.gz', Bucket=dg_config.bucket,
-                                                        Key=s3_upload_file_path)
-                    logger.info(f'tmp.csv.gz uploaded to {s3_upload_file_path}')
+                            # Decrypt file
+                            with open(local_file_absolute_path, 'rb') as f:
+                                gpg_1010.decrypt_file(f, passphrase=dg_config.passphrase, output="tmp.csv.gz")
+                            logger.info(f'{local_file_absolute_path} decrypted to tmp.csv.gz')
+                            os.remove(local_file_absolute_path)
 
-                    # Copying file from staging to archive directory to have a backup
-                    copy_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
-                                       dg_config.bucket, dg_config.s3_archive_path)
+                            # Upload file to staging by date partition
+                            partition_col = filename.split('_')[-1][0:8]
+                            s3_upload_file_path = f'''{dg_config.s3_staging_path_1010}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
+                            s3_resource.meta.client.upload_file(Filename='tmp.csv.gz', Bucket=dg_config.bucket,
+                                                                Key=s3_upload_file_path)
+                            logger.info(f'tmp.csv.gz uploaded to {s3_upload_file_path}')
+
+                            # Copying file from staging to archive directory to have a backup
+                            copy_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
+                                               dg_config.bucket, dg_config.s3_archive_path)
+
+                    except Exception as e:
+                        raise Exception(f"Error in PGP-Decrypt 1010\n {e}")
+
+        except Exception as e:
+            raise Exception(f"S3 Object not found {prefix}\n {e}")
 
     # Delete file from local
     assert_file_exists(dg_config.local_Path, 'tmp.csv.gz')
@@ -83,37 +93,46 @@ def process_aurus(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y
     """
     gpg_aurus = gpg_decrytion('aurus_decrypt_key.gpg', root_dir, dg_config.bucket, dg_config.gnupghome)
     paginator = s3_client.get_paginator('list_objects')
+    prefix = f'{dg_config.remote_Aurus_path}/ADTFF_5_4_4_{date_value}'
+    logger.info(f'Downloading from {prefix}')
 
-    # Iterate over directory
-    for result in paginator.paginate(Bucket=dg_config.bucket,
-                                     Prefix=f'{dg_config.remote_Aurus_path}/ADTFF_5_4_4_{date_value}'):
-        for content in result.get('Contents', []):
-            filename = content['Key'].split('/')[-1]
-            folder = content['Key'].split('/')[-3]
+    try:
+        # Iterate over directory
+        for result in paginator.paginate(Bucket=dg_config.bucket, Prefix=prefix):
+            for content in result.get('Contents', []):
+                filename = content['Key'].split('/')[-1]
+                folder = content['Key'].split('/')[-3]
 
-            # Skip paths ending in /
-            if not content['Key'].endswith('/'):
-                local_file_absolute_path = f'{dg_config.local_Path}/{filename}'
+                try:
+                    # Skip paths ending in /
+                    if not content['Key'].endswith('/'):
+                        local_file_absolute_path = f'{dg_config.local_Path}/{filename}'
 
-                s3_upload_file_path = f'''{dg_config.s3_staging_path}/{folder.lower()}/{filename.replace('.pgp', '')}'''
+                        s3_upload_file_path = f'''{dg_config.s3_staging_path}/{folder.lower()}/{filename.replace('.pgp', '')}'''
 
-                # Make sure directories exist and file doesnot exist
-                assert_file_exists(dg_config.local_Path, filename)
+                        # Make sure directories exist and file doesnot exist
+                        assert_file_exists(dg_config.local_Path, filename)
 
-                # Aurus - Download file to local path
-                s3_client.download_file(dg_config.bucket, content['Key'], local_file_absolute_path)
-                logger.info(f'{local_file_absolute_path} downloaded')
+                        # Aurus - Download file to local path
+                        s3_client.download_file(dg_config.bucket, content['Key'], local_file_absolute_path)
+                        logger.info(f'{local_file_absolute_path} downloaded')
 
-                # Decrypt aurus file and Upload to tranformed s3 directory
-                with open(local_file_absolute_path, 'rb') as f:
-                    gpg_aurus.decrypt_file(f, passphrase=dg_config.passphrase, output="tmp.csv")
+                        # Decrypt aurus file and Upload to tranformed s3 directory
+                        with open(local_file_absolute_path, 'rb') as f:
+                            gpg_aurus.decrypt_file(f, passphrase=dg_config.passphrase, output="tmp.csv")
 
-                logger.info(f'{local_file_absolute_path} decrypted to tmp.csv')
+                        logger.info(f'{local_file_absolute_path} decrypted to tmp.csv')
 
-                # Upload file to s3
-                s3_resource.meta.client.upload_file(Filename='tmp.csv', Bucket=dg_config.bucket,
-                                                    Key=s3_upload_file_path)
-                logger.info(f'tmp.csv uploaded to {s3_upload_file_path}')
+                        # Upload file to s3
+                        s3_resource.meta.client.upload_file(Filename='tmp.csv', Bucket=dg_config.bucket,
+                                                            Key=s3_upload_file_path)
+                        logger.info(f'tmp.csv uploaded to {s3_upload_file_path}')
+
+                except Exception as e:
+                    raise Exception(f"Error in PGP-Decrypt Aurus \n {e}")
+
+    except Exception as e:
+        raise Exception(f"S3 Object not found {prefix}\n {e}")
 
 
 def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env):
