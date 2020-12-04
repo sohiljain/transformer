@@ -25,7 +25,6 @@ pipeline {
     stage('Deploy CDP to DG TRANSFORMER Production') {
       when {
         allOf {
-          branch "master"
           expression { params.DEPLOY_DG_TRANSFORMER_TO_PRODUCTION }
         }
       }
