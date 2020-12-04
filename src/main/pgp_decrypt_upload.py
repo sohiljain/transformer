@@ -139,7 +139,8 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env):
         if ',' in args_dt:
             for date_arg in args_dt.split(','):
                 logger.info(f'Starting process for date - {args_dt}')
-                process_aurus(dg_config, root_dir, date_arg)
+                if (date_arg > dg_config.aurus_start_date):
+                    process_aurus(dg_config, root_dir, date_arg)
                 process_1010(dg_config, root_dir, date_arg)
 
         # pattern-2
@@ -150,14 +151,16 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env):
             for i in range(delta.days + 1):  # Adding 1 to include end_date
                 logger.info(f'Starting process for date - {start_date}')
                 date_arg = (str(start_date)).split(' ')[0].replace('-', '')
-                process_aurus(dg_config, root_dir, date_arg)
+                if (date_arg > dg_config.aurus_start_date):
+                    process_aurus(dg_config, root_dir, date_arg)
                 process_1010(dg_config, root_dir, date_arg)
                 start_date += dt.timedelta(days=1)
 
         # pattern-3
         else:
             logger.info(f'Starting process for date - {args_dt}')
-            process_aurus(dg_config, root_dir, args_dt)
+            if (args_dt > dg_config.aurus_start_date):
+                process_aurus(dg_config, root_dir, args_dt)
             process_1010(dg_config, root_dir, args_dt)
 
         msg = {"Action": "Start EMR Process Gold", "EnvDetail": env}
@@ -169,7 +172,7 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env):
                        message=json_msg)
 
     except Exception as e:
-        # send_sns_alert("DG Transformer: PGP Decrypt failed", e)
+        send_sns_alert("DG Transformer: PGP Decrypt failed", e)
         logger.error(f"DG Transformer: PGP Decrypt failed {e}", exc_info=True)
         s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
         logger.info(f"Cleaned up staging file path {dg_config.s3_staging_path_1010}")

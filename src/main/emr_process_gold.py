@@ -110,8 +110,6 @@ def format_gold_file(table, spark, dg_config):
     except Exception as e:
         logger.error(f'{e} Unable to rename file')
 
-#TODO create README
-
 
 def process_gold(spark, dg_config: DgConfig):
     """

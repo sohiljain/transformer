@@ -51,7 +51,7 @@ def lambda_handler(event, context):
                     return_msg = trigger_emr_process_gold(env_detail)
                 except Exception as e:
                     return_msg = "DG Transformer EMR failed"
-                    # send_sns_alert(return_msg, e)
+                    send_sns_alert(return_msg, e)
                     logger.error(f"{return_msg} {e}", exc_info=True)
 
             elif action == "Manual":
@@ -61,7 +61,7 @@ def lambda_handler(event, context):
 
                 except Exception as e:
                     return_msg = f"DG Transformer Batch failed. Either batch failed or incorrect event passed"
-                    # send_sns_alert(return_msg, e)
+                    send_sns_alert(return_msg, e)
                     logger.error(f"{return_msg} {e}", exc_info=True)
 
             else:
@@ -76,7 +76,7 @@ def lambda_handler(event, context):
                     return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail)
                 except Exception as e:
                     return_msg = "DG Transformer Batch failed"
-                    # send_sns_alert(return_msg, e)
+                    send_sns_alert(return_msg, e)
                     logger.error(f"{return_msg} {e}", exc_info=True)
 
     except Exception as e:

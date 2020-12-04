@@ -36,3 +36,4 @@ class DgConfig:
         self.s3_gold_path= yaml_cfg.get('s3_gold_path','')
         self.table_queries = yaml_cfg.get('table_queries', '')
         self.cols = yaml_cfg.get('cols', '')
+        self.aurus_start_date = yaml_cfg.get('aurus_startdate', '20200910')

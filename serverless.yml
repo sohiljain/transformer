@@ -11,7 +11,7 @@ frameworkVersion: ">=1.1.0 <2.0.0"
 
 custom:
   stages:
-    - dev
+    - development
     - prod
   function_name:
     dev: bridg-dg-transformer-dev
