@@ -78,7 +78,7 @@ pipeline {
         	DEPLOYMENT = 'production'
         	AWS_DEFAULT_REGION = 'us-west-2'
         	S3_BUCKET_RAW_DATA_1 = 'bridg-client-ftp'
-        	SNS_TOPIC_ARN_1 = 'dg-transformer-lambda-prod-sns'
+        	SNS_TOPIC_ARN_1 = 'dg-transformer-lambda-sns'
         	SNS_TOPIC_ARN_2 = 'data_ingestion_ftp_sync'
         	BRIDG_ENV_NAME = 'cdp'
         	BRIDG_CONFIG_URL = 'http://config-cdp.towerbridg.com/'
