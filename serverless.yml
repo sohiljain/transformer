@@ -11,11 +11,11 @@ frameworkVersion: ">=1.1.0 <2.0.0"
 
 custom:
   stages:
-    - development
-    - production
+    - dev
+    - prod
   function_name:
-    development: bridg-dg-transformer-dev
-    production: bridg-dg-transformer
+    dev: bridg-dg-transformer-dev
+    prod: bridg-dg-transformer-prod
   AWS_REGION: ${env:AWS_DEFAULT_REGION}
   DEAD_LETTER_QUEUE: ${self:custom.function_name.${self:provider.stage}}-dead-letter-queue
   BRIDG_ENV_NAME: ${env:BRIDG_ENV_NAME}
