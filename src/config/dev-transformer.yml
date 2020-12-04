@@ -12,7 +12,7 @@ remote_1010_path: dollargeneral/1010/Historical
 remote_Aurus_path: dollargeneral/Aurus/Daily
 local_Path: Documents/DG
 secret: /cdp/SecretManager/dollargeneral-transformer/
-aurus_startdate: 20200910
+aurus_startdate: '20200910'
 
 table_queries:
 
