@@ -186,29 +186,31 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table):
     count_check_id = df_transformed.where("check_id='' or check_id is null").count() if table in ['transaction_item',
                     'transactions', 'tenders', 'discounts'] else 0
     try:
+        logger.info(f'Gold - {df_transformed.count()}')
+        logger.info(f'Staging - {df_staging.count()}')
+
         # Customer-name check for tender table
         if table == 'tenders':
             count_customer_name = df_transformed.select("customer_name").distinct().count()
             sns_msg = f"""Customer name count in tenders : {count_customer_name}"""
             logger.info(sns_msg)
-            if count_customer_name < 200 and df_transformed.count() == df_staging.count() and count_transactiontimestamp == 0 and count_check_id == 0:
+            if (count_customer_name > 20000 and df_transformed.count() == df_staging.count()
+                    and count_transactiontimestamp == 0 and count_check_id == 0):
                 pass
             else:
                 pass
                 # For tenders, we only send sns alerts otherwise Historical fails because historical doesn't match exact
-                # send_sns_alert(f"Transformer: {table} Customer Name match Failure", sns_msg)
+                send_sns_alert(f"Transformer: {table} Customer Name match Failure", sns_msg)
 
         # Count check between staging and temp table
         else:
             if df_transformed.count() == df_staging.count() and count_transactiontimestamp == 0 and count_check_id == 0:
                 logger.info("All validations successful")
-                logger.info(f'Gold - {df_transformed.count()}')
-                logger.info(f'Staging - {df_staging.count()}')
             else:
                 pass
                 # Send alert if conditions are not met and exit
                 send_sns_alert(f"Transformer: {table} Metrics Failure",
-                               f"""Transformed record count : {df_transformed.count()} Archive row count : {df_staging.count()}""")
+                               f"""Transformed record count : {df_transformed.count()} Staging row count : {df_staging.count()}""")
                 raise Exception(f"Count check failure for {table} Transformed record count : {df_transformed.count()} Staging row count : {df_staging.count()}")
     except Exception as e:
         logger.error(f"Count check failure {e}")
