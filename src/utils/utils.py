@@ -228,7 +228,11 @@ def send_sns_alert(subject, message):
         if subject == 'batch_pgp_decrypt':
             sns_topic_arn = os.getenv("EMR_SNS_PARAM")
         else:
-            sns_topic_arn = ssm.get_parameter(Name=os.getenv("ALERT_SNS_PARAM"))['Parameter']['Value']
+            try:
+                sns_topic_arn = ssm.get_parameter(Name=os.getenv("ALERT_SNS_PARAM"))['Parameter']['Value']
+            except Exception as e:
+                logger.error(e)
+                sns_topic_arn = os.getenv("ALERT_SNS_ARN")
 
         # sending sns message for alerting on slack and email
         sns_client = boto3.client('sns', region_name='us-west-2')
