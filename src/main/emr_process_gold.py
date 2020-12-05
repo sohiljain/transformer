@@ -122,6 +122,10 @@ def process_gold(spark, dg_config: DgConfig):
         spark.sql("set fs.s3a.multiobjectdelete.enable=false")
         logger.info('spark initiated')
 
+        # clean temp files if already present
+        s3_delete_file(dg_config.s3_tmp_path, dg_config.bucket)
+        logger.info(f"Deleted temporary file path {dg_config.s3_tmp_path}")
+
         for table in ['aurus', 'trans_disc_xref']:
             create_temptable(table, spark, dg_config)
             logger.info(f'{table} created')
@@ -133,7 +137,7 @@ def process_gold(spark, dg_config: DgConfig):
             logger.info(f'Finished {table}')
 
     except Exception as e:
-        # send_sns_alert("DG Transformer: EMR processing failed", e)
+        send_sns_alert("DG Transformer: EMR processing failed", e)
         logger.error(f"DG Transformer: EMR processing failed {e}", exc_info=True)
         raise Exception(f"DG Transformer: EMR processing failed {e}")
 

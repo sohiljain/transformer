@@ -154,6 +154,10 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env):
         # 2. dt1:dt2 - process all dates between dt1 and dt2 inclusive on both sides
         # 3. dt - process a single date
 
+        # clean staging files if already present
+        s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
+        logger.info(f"Deleted staging file path {dg_config.s3_staging_path_1010}")
+
         # pattern-1
         if ',' in args_dt:
             for date_arg in args_dt.split(','):
