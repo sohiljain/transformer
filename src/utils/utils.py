@@ -229,10 +229,15 @@ def send_sns_alert(subject, message):
             sns_topic_arn = os.getenv("EMR_SNS_PARAM")
         else:
             try:
-                sns_topic_arn = ssm.get_parameter(Name=os.getenv("ALERT_SNS_PARAM"))['Parameter']['Value']
+                alert_sns_env = os.getenv("ALERT_SNS_PARAM")
+                logger.info(f'alert_sns_env : {alert_sns_env}')
+
+                sns_topic_arn = ssm.get_parameter(Name=alert_sns_env)['Parameter']['Value']
             except Exception as e:
                 logger.error(e)
                 sns_topic_arn = os.getenv("ALERT_SNS_ARN")
+
+        logger.info(f'sns_topic_arn : {sns_topic_arn}')
 
         # sending sns message for alerting on slack and email
         sns_client = boto3.client('sns', region_name='us-west-2')
