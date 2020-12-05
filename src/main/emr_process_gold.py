@@ -25,18 +25,20 @@ def create_temptable(table_name, spark, dg_config):
     :param dg_config: config
     :return: appropriate success/failure message
     """
-    table_path = f'{dg_config.s3a_bucket}/{dg_config.s3_staging_path_1010}/{table_name}/'
-    logger.info(f'Creating table dg_{table_name} on {table_path}')
 
     if table_name == 'aurus':
-        df = spark.read.csv(
-            f'{dg_config.s3a_bucket}/{dg_config.s3_staging_path}/{table_name}/ADTFF_5_4_4_*',
-            sep=',', header=True, nullValue='\\N')
+        table_path = f'{dg_config.s3a_bucket}/{dg_config.s3_staging_path}/{table_name}/ADTFF_5_4_4_*'
+        logger.info(f'Creating table dg_{table_name} on {table_path}')
+
+        df = spark.read.csv(table_path, sep=',', header=True, nullValue='\\N')
 
         df = (df.withColumn("Store_ID", df["Store_ID"].cast("integer"))
               .withColumn("Approved_Amount", df["Approved_Amount"].cast("double")))
 
     else:
+        table_path = f'{dg_config.s3a_bucket}/{dg_config.s3_staging_path_1010}/{table_name}/'
+        logger.info(f'Creating table dg_{table_name} on {table_path}')
+
         df = spark.read.csv(table_path, sep='|', header=True, nullValue='\\N')
 
         if table_name == 'transactions':
@@ -73,13 +75,13 @@ def format_gold_file(table, spark, dg_config):
         df = spark.sql(dg_config.table_queries.get(table))
 
         tmp_path = f"{dg_config.s3a_bucket}/{dg_config.s3_tmp_path}/{table}/"
-        df.repartition(1, 'partition_col').write.partitionBy('partition_col').csv(tmp_path, header=True, compression='gzip',
-                                                                              sep='|', emptyValue='', mode='overwrite')
+        df.repartition(1, 'partition_col').write.partitionBy('partition_col').csv(tmp_path, header=True,
+                                            compression='gzip', sep='|', emptyValue='', mode='overwrite')
         logger.info(f'{tmp_path} writing done')
 
     except Exception as e:
         logger.error(f'{e} Error in read write spark file')
-        sys.exit(1)
+        raise Exception(f'{e} Error in read write spark file')
 
     # Record count validation call
     # Proceed writing to gold only if validation succeeds otherwise call sns_alert
@@ -109,6 +111,7 @@ def format_gold_file(table, spark, dg_config):
 
     except Exception as e:
         logger.error(f'{e} Unable to rename file')
+        raise Exception(f'{e} Unable to rename file')
 
 
 def process_gold(spark, dg_config: DgConfig):
