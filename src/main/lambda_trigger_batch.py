@@ -68,16 +68,20 @@ def lambda_handler(event, context):
                 # This is the default daily prod run case. We want to check if all s3 files are present before starting
                 checks3flag = True
 
-                s3_key = record['Sns']['Message']['Records'][0]['s3']['object']['key']
-                file_name = s3_key.split('/')[5]
-                date_value = file_name.split('_')[2][:8]
+                for internal_record in message['Records']:
+                    s3_key = internal_record['s3']['object']['key']
+                    logger.info(f's3_key: {s3_key}')
 
-                try:
-                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail)
-                except Exception as e:
-                    return_msg = "DG Transformer Batch failed"
-                    send_sns_alert(return_msg, e)
-                    logger.error(f"{return_msg} {e}", exc_info=True)
+                    file_name = s3_key.split('/')[5]
+                    date_value = file_name.split('_')[2][:8]
+                    logger.info(f'Processing {file_name} for {date_value}')
+
+                    try:
+                        return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail)
+                    except Exception as e:
+                        return_msg = "DG Transformer Batch failed"
+                        send_sns_alert(return_msg, e)
+                        logger.error(f"{return_msg} {e}", exc_info=True)
 
     except Exception as e:
         return_msg = "Not appropriate event for DG Transformer"
