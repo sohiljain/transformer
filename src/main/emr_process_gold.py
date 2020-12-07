@@ -138,6 +138,7 @@ def process_gold(spark, dg_config: DgConfig):
             create_temptable(table, spark, dg_config)
             format_gold_file(table, spark, dg_config)
             logger.info(f'Finished {table}')
+            logger.info('---------------------------')
 
     except Exception as e:
         send_sns_alert("DG Transformer: EMR processing failed", e)
