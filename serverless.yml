@@ -14,15 +14,15 @@ custom:
     - development
     - production
   function_name:
-    development: bridg-dg-transformer
-    production: bridg-dg-transformer
+    development: bridg-dg-transformer-dev
+    production: bridg-dg-transformer-production
   AWS_REGION: ${env:AWS_DEFAULT_REGION}
   DEAD_LETTER_QUEUE: ${self:custom.function_name.${self:provider.stage}}-dead-letter-queue
   BRIDG_ENV_NAME: ${env:BRIDG_ENV_NAME}
   BRIDG_CONFIG_URL: ${env:BRIDG_CONFIG_URL}
   BRIDG_1_ACCOUNT: ${env:BRIDG_1_ACCOUNT}
   S3_BUCKET_RAW_DATA_1: ${env:S3_BUCKET_RAW_DATA_1} # Name not ARN
-  SNS_TOPIC_ARN_1: ${env:SNS_TOPIC_ARN_1}
+  SNS_TOPIC_ARN_1: ${env:SNS_TOPIC_ARN_1}-${self:provider.stage}
   SNS_TOPIC_ARN_2: ${env:SNS_TOPIC_ARN_2}
   security_group: ${env:SECURITY_GROUP, 'sg-0710b844e08d5cb2e'}
   SUBNET_A: ${env:SUBNET_A, 'subnet-051cad2b010989d3a'}
@@ -43,7 +43,7 @@ provider:
   timeout: 600 # The default is 6
   region: ${self:custom.AWS_REGION}
   versionFunctions: false
-  deploymentBucket: ${env:BRIDG_ENV_NAME}.com.serverless.${self:custom.AWS_REGION}.deploys
+  deploymentBucket: cdp.com.serverless.${self:custom.AWS_REGION}.deploys
   role: DollarGeneralTransformerRole
   iamRoleStatements:
     - Effect: "Allow"
@@ -63,7 +63,7 @@ provider:
       - ${self:custom.SUBNET_C}
 
 package:
-  artifact: build/dg_transformer_prepare.zip
+  artifact: src/dg_transformer_prepare.zip
 
 resources:
   Resources:
@@ -84,7 +84,7 @@ resources:
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         Policies:
-          - PolicyName: DollarGeneralTransformerSchedulerPolicy
+          - PolicyName: DollarGeneralTransformerSchedulerPolicy-${opt:stage}
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
@@ -114,8 +114,7 @@ resources:
                   Action:
                     - batch:SubmitJob
                   Resource:
-                    - "arn:aws:batch:us-west-2:596832493770:job-definition/cdp-dg-transformer:*"
-                    - "arn:aws:batch:us-west-2:596832493770:job-queue/cdp-que"
+                    - "*"
                 - Effect: Allow
                   Action:
                     - elasticmapreduce:*
@@ -131,12 +130,24 @@ resources:
                     - secretsmanager:*
                   Resource:
                     - "arn:aws:secretsmanager:us-west-2:596832493770:secret:/cdp/SecretManager/dollargeneral-transformer/-YjmQfu"
+                - Effect: Allow
+                  Action:
+                    - ssm:GetParametersByPath
+                    - ssm:GetParameters
+                    - ssm:GetParameter
+                  Resource:
+                    - "arn:aws:ssm:us-west-2:596832493770:parameter/cdp/SNS/Alarm"
+                - Effect: Allow
+                  Action:
+                    - SNS:Publish
+                  Resource:
+                    - "arn:aws:sns:us-west-2:596832493770:cdp-SNS-1XM4Q7BJBS0UB-AlarmTopic-GWQ3SR7P7LPY"
 
 
 functions:
   DollarGeneralTransformer:
     name: ${self:custom.function_name.${self:provider.stage}}
-    description: "AWS Lambda function performing dollar generaal transformation step of 'Data Pipeline'."
+    description: "AWS Lambda function performing dollar general transformation step of 'Data Pipeline'."
     handler: main/lambda_trigger_batch.lambda_handler
     events:
       - sns: ${self:custom.SNS_TOPIC_ARN_1}
@@ -147,5 +158,6 @@ functions:
       BATCH_JOBQUEUE: ${self:custom.BATCH_JOBQUEUE}
       BATCH_JOBDEFINITION: ${self:custom.BATCH_JOBDEFINITION}
       ALERT_SNS_PARAM: ${self:custom.ALERT_SNS_PARAM}
+      BRIDG_ENV_NAME: ${self:custom.BRIDG_ENV_NAME}
     tags:
       Environment: ${self:custom.BRIDG_ENV_NAME}

@@ -15,6 +15,7 @@ python-gnupg="==0.4.6"
 boto3="*"
 pyspark="*"
 aws-hadoop="*"
+gitpython="*"
 
 [requires]
 python_version = "3.7"
