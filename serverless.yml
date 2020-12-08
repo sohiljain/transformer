@@ -118,7 +118,7 @@ resources:
                 - Effect: Allow
                   Action:
                     - elasticmapreduce:*
-                  Resource: "*"  # Have not specified resource here because we start ephemeral cluster which terminate after job completion
+                  Resource: "*"  # Have not specified resource here because we start ephemeral cluster which terminates after job completion
                 - Effect: Allow
                   Action:
                     - iam:PassRole
