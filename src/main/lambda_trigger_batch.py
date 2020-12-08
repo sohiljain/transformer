@@ -72,17 +72,19 @@ def lambda_handler(event, context):
                     s3_key = internal_record['s3']['object']['key']
                     logger.info(f's3_key: {s3_key}')
 
-                    if s3_key.startswith('dollargeneral/1010/Daily/'):
-                        file_name = s3_key.split('/')[4]
-                        date_value = file_name.rsplit('_')[-1][:8]
-                        logger.info(f'Processing {file_name} for {date_value}')
+                    if not s3_key.startswith('dollargeneral/1010/Daily/'):
+                        raise Exception
 
-                        try:
-                            return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail)
-                        except Exception as e:
-                            return_msg = "DG Transformer Batch failed"
-                            send_sns_alert(return_msg, e)
-                            logger.error(f"{return_msg} {e}", exc_info=True)
+                    file_name = s3_key.split('/')[4]
+                    date_value = file_name.rsplit('_')[-1][:8]
+                    logger.info(f'Processing {file_name} for {date_value}')
+
+                    try:
+                        return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail)
+                    except Exception as e:
+                        return_msg = "DG Transformer Batch failed"
+                        send_sns_alert(return_msg, e)
+                        logger.error(f"{return_msg} {e}", exc_info=True)
 
     except Exception as e:
         return_msg = "Not appropriate event for DG Transformer"
@@ -177,26 +179,3 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch):
         raise Exception(f"Failed to start EMR job {e}")
 
     return batch_response_message
-
-# def send_sns_alert(subject, error_message):
-#     """
-#     method used to send SNS alert on topic provided.
-#     :param subject: Subject for message to be displayed in response
-#     :param error_message: Error message to be displayed in response
-#     :return: Appropriate success/failure alert
-#     """
-#     try:
-#         # getting sns topic arn from parameter store
-#         ssm = boto3.client('ssm', region_name='us-west-2')
-#         sns_topic_arn = ssm.get_parameter(Name=os.getenv("ALERT_SNS_PARAM"))['Parameter']['Value']
-#
-#         # sending sns message for alerting on slack and email
-#         sns_client = boto3.client('sns', region_name='us-west-2')
-#         sns_client.publish(
-#             TopicArn=sns_topic_arn,
-#             Subject=subject,
-#             Message=str(error_message)
-#         )
-#     except Exception as e:
-#         logger.error(f"Failed to publish SNS message {e}", exc_info=True)
-#         raise Exception(f"Failed to publish SNS message {e}")
