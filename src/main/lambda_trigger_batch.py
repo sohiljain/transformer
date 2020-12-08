@@ -44,7 +44,7 @@ def lambda_handler(event, context):
             if 'EnvDetail' in message:
                 env_detail = message['EnvDetail']
             else:
-                env_detail = os.environ['BRIDG_ENV_NAME'].split('-')[0]
+                env_detail = 'dev' if os.environ['BRIDG_ENV_NAME'].split('-')[0] == 'dev' else 'prod'
 
             if action == "Start EMR Process Gold":
                 try:
@@ -72,16 +72,17 @@ def lambda_handler(event, context):
                     s3_key = internal_record['s3']['object']['key']
                     logger.info(f's3_key: {s3_key}')
 
-                    file_name = s3_key.split('/')[5]
-                    date_value = file_name.split('_')[2][:8]
-                    logger.info(f'Processing {file_name} for {date_value}')
+                    if s3_key.startswith('dollargeneral/1010/Daily/'):
+                        file_name = s3_key.split('/')[4]
+                        date_value = file_name.rsplit('_')[-1][:8]
+                        logger.info(f'Processing {file_name} for {date_value}')
 
-                    try:
-                        return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail)
-                    except Exception as e:
-                        return_msg = "DG Transformer Batch failed"
-                        send_sns_alert(return_msg, e)
-                        logger.error(f"{return_msg} {e}", exc_info=True)
+                        try:
+                            return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail)
+                        except Exception as e:
+                            return_msg = "DG Transformer Batch failed"
+                            send_sns_alert(return_msg, e)
+                            logger.error(f"{return_msg} {e}", exc_info=True)
 
     except Exception as e:
         return_msg = "Not appropriate event for DG Transformer"
