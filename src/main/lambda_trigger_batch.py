@@ -30,6 +30,10 @@ def lambda_handler(event, context):
     """
 
     try:
+
+        if is_another_batch_job_running(jobName):
+            return "Terminating because another batch job is running"
+
         # Check the sns event and trigger batch vs emr appropriately
         for record in event['Records']:
             message = record['Sns']['Message']
@@ -179,3 +183,22 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch):
         raise Exception(f"Failed to start EMR job {e}")
 
     return batch_response_message
+
+
+def is_another_batch_job_running(jobName):
+
+    batch_client = boto3.client('batch', region_name='us-west-2')
+    for jobStatus in ['SUBMITTED', 'PENDING', 'RUNNABLE', 'STARTING', 'RUNNING']:
+        response = batch_client.list_jobs(
+            jobQueue=jobQueue,
+            jobStatus=jobStatus
+        )
+
+        for jobSummary in response['jobSummaryList']:
+            if jobSummary['jobName'] == jobName:
+                logger.info(f"Found another batch job running for {jobName}")
+                return True
+
+    logger.info(f"No current batch job running for {jobName}")
+
+    return False
