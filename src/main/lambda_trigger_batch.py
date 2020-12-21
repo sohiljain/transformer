@@ -103,6 +103,10 @@ def trigger_emr_process_gold(env_emr):
     logger.info(f"{env_emr} - Starting Dollargeneral Transformer pipeline")
 
     try:
+
+        if is_another_emr_job_running(f'{jobName}-emr-cluster'):
+            return "Terminating because another emr job is running"
+
         with open(f'/var/task/{env_emr}-emr.yml', 'r') as yml_file:
             emr_conf = yaml.safe_load(yml_file)
         cluster_id = connection.run_job_flow(**emr_conf)
@@ -160,15 +164,15 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch):
         if not check_s3_files(date_value):
             sys.exit(0)
 
-    if is_another_batch_job_running(jobName):
-        return "Terminating because another batch job is running"
-
     # starting pgp_decrypt batch job
     batch = boto3.client('batch')
     command = f'--module batch_pgp_decrypt --date {date_value} --env {env_batch}'
     command = command.split()
 
     try:
+        if is_another_batch_job_running(jobName):
+            return "Terminating because another batch job is running"
+
         submit_job_response = batch.submit_job(
             jobName=jobName,
             jobQueue=jobQueue,
@@ -186,7 +190,6 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch):
 
 
 def is_another_batch_job_running(jobName):
-
     batch_client = boto3.client('batch', region_name='us-west-2')
     for jobStatus in ['SUBMITTED', 'PENDING', 'RUNNABLE', 'STARTING', 'RUNNING']:
         response = batch_client.list_jobs(
@@ -200,5 +203,23 @@ def is_another_batch_job_running(jobName):
                 return True
 
     logger.info(f"No current batch job running for {jobName}")
+
+    return False
+
+
+def is_another_emr_job_running(jobName):
+    emr_client = boto3.client('emr', region_name='us-west-2')
+
+    response = emr_client.list_clusters(
+        ClusterStates=[
+            'STARTING', 'BOOTSTRAPPING', 'RUNNING', 'WAITING'
+        ]
+    )
+    for cluster in response['Clusters']:
+        if cluster['Name'] == jobName:
+            logger.info(f"Found another emr job running for {jobName}")
+            return True
+
+    logger.info(f"No current emr job running for {jobName}")
 
     return False

@@ -115,7 +115,7 @@ resources:
                     - batch:SubmitJob
                     - batch:ListJobs
                   Resource:
-                    - "*" # Rights given to all resources becuase batch need permission to compute environment as well.
+                    - "*" # Rights given to all resources because batch need permission to compute environment as well.
                 - Effect: Allow
                   Action:
                     - elasticmapreduce:*
