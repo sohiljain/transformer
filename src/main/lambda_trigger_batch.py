@@ -31,9 +31,6 @@ def lambda_handler(event, context):
 
     try:
 
-        if is_another_batch_job_running(jobName):
-            return "Terminating because another batch job is running"
-
         # Check the sns event and trigger batch vs emr appropriately
         for record in event['Records']:
             message = record['Sns']['Message']
@@ -162,6 +159,9 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch):
     if checks3flag == True:
         if not check_s3_files(date_value):
             sys.exit(0)
+
+    if is_another_batch_job_running(jobName):
+        return "Terminating because another batch job is running"
 
     # starting pgp_decrypt batch job
     batch = boto3.client('batch')
