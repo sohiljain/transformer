@@ -8,7 +8,7 @@ from utils.utils import copy_staging_files, assert_file_exists, gpg_decrytion, s
 from utils.config import DgConfig
 
 # create logger
-logging.basicConfig(format='%(name)s:%(levelname)s:%(asctime)s:%(lineno)d: %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(name)s:%(levelname)s:%(lineno)d: %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -135,7 +135,7 @@ def process_aurus(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y
         raise Exception(f"S3 Object not found {prefix}\n {e}")
 
 
-def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env):
+def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type):
     """
     Serially download & upload Aurus/1010 files from bridg-client-ftp to s3 transformed directory
     1. Download raw Aurus/1010 files from the ftp bucket according to args_dt date/date_range provided
@@ -186,7 +186,7 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env):
                 process_aurus(dg_config, root_dir, args_dt)
             process_1010(dg_config, root_dir, args_dt)
 
-        msg = {"Action": "Start EMR Process Gold", "EnvDetail": env}
+        msg = {"Action": "Start EMR Process Gold", "EnvDetail": env, "Type" : type}
         json_msg = json.dumps(msg)
         logger.info(f"Sending message - {json_msg} to SNS")
 
@@ -195,8 +195,8 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env):
                        message=json_msg)
 
     except Exception as e:
-        send_sns_alert("DG Transformer: PGP Decrypt failed", e)
-        logger.error(f"DG Transformer: PGP Decrypt failed {e}", exc_info=True)
+        # send_sns_alert(f"{type} Transformer: PGP Decrypt failed", e)
+        logger.error(f"{type} Transformer: PGP Decrypt failed {e}", exc_info=True)
         s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
         logger.info(f"Cleaned up staging file path {dg_config.s3_staging_path_1010}")
-        raise Exception(f"DG Transformer: PGP Decrypt failed {e}")
+        # raise Exception(f"{type} Transformer: PGP Decrypt failed {e}")

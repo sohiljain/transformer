@@ -12,7 +12,7 @@ s3_resource = boto3.resource('s3')
 s3_client = boto3.client('s3')
 
 # create logger
-logging.basicConfig(format='%(name)s:%(levelname)s:%(asctime)s:%(lineno)d: %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(name)s:%(levelname)s:%(lineno)d: %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -114,7 +114,7 @@ def format_gold_file(table, spark, dg_config):
         raise Exception(f'{e} Unable to rename file')
 
 
-def process_gold(spark, dg_config: DgConfig):
+def process_gold(spark, dg_config: DgConfig, type):
     """
     Starting gold data processing
     :param spark: spark context
@@ -141,9 +141,9 @@ def process_gold(spark, dg_config: DgConfig):
             logger.info('---------------------------')
 
     except Exception as e:
-        send_sns_alert("DG Transformer: EMR processing failed", e)
-        logger.error(f"DG Transformer: EMR processing failed {e}", exc_info=True)
-        raise Exception(f"DG Transformer: EMR processing failed {e}")
+        # send_sns_alert(f"{type} Transformer: EMR processing failed", e)
+        logger.error(f"{type} Transformer: EMR processing failed {e}", exc_info=True)
+        # raise Exception(f"{type} Transformer: EMR processing failed {e}")
 
     finally:
         s3_delete_file(dg_config.s3_tmp_path, dg_config.bucket)
