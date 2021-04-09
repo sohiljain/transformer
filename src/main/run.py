@@ -31,10 +31,7 @@ if __name__ == "__main__":
     root_dir = args.root_dir
 
     # Config file based on env
-    if args.type == "POPSHELF":
-        config_file = f'{args.env}-popshelf-transformer.yml'
-    else:
-        config_file = f'{args.env}-transformer.yml'
+    config_file = f'{args.env}-{args.type}-transformer.yml'
     config_file_path = f'{root_dir}/config/{config_file}'
     logging.info(f'Loading config from {config_file_path}')
     logging.info(f'Root directory has been set as {root_dir}')

@@ -75,9 +75,9 @@ def lambda_handler(event, context):
                     logger.info(f's3_key: {s3_key}')
 
                     if 'popshelf' in s3_key:
-                        type = 'POPSHELF'
+                        type = 'popshelf'
                     else:
-                        type = 'DG'
+                        type = 'dg'
 
                     if not (s3_key.startswith('dollargeneral/1010/Daily/') or s3_key.startswith('dollargeneral-popshelf/1010/Daily')):
                         raise Exception
@@ -109,12 +109,12 @@ def trigger_emr_process_gold(env_emr, type):
     logger.info(f"{env_emr} - Starting {type} Transformer pipeline")
 
     try:
-        jobName = f'{_jobName}-popshelf' if 'POPSHELF' in type else _jobName
+        jobName = f'{_jobName}-popshelf' if 'popshelf' in type else _jobName
 
         if is_another_emr_job_running(f'{jobName}-emr-cluster'):
             return "Terminating because another emr job is running"
 
-        with open(f'/var/task/{env_emr}-emr.yml', 'r') as yml_file:
+        with open(f'/var/task/{env_emr}-{type}-emr.yml', 'r') as yml_file:
             emr_conf = yaml.safe_load(yml_file)
         cluster_id = connection.run_job_flow(**emr_conf)
         response = f"Cluster created with the step..{cluster_id['JobFlowId']}"
@@ -135,7 +135,7 @@ def check_s3_files(date_value, type):
     """
     s3_client = boto3.client('s3')
     bucket = 'bridg-client-ftp'
-    if 'POPSHELF' in type:
+    if 'popshelf' in type:
         remote_1010_path = 'dollargeneral-popshelf/1010/Daily'
     else:
         remote_1010_path = 'dollargeneral/1010/Daily'
@@ -180,7 +180,7 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type):
     command = command.split()
 
     try:
-        jobName = f'{_jobName}-popshelf' if 'POPSHELF' in type else _jobName
+        jobName = f'{_jobName}-popshelf' if 'popshelf' in type else _jobName
 
         if is_another_batch_job_running(jobName):
             return "Terminating because another batch job is running"

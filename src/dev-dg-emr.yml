@@ -1,7 +1,7 @@
 # Copyright (c) 2020 Bridg Inc. All rights reserved.
 # @author Sohil Jain <sohil.jain@bridg.com>
 
-Name: cdp-dg-transformer-emr-cluster
+Name: dev-cdp-dg-transformer-emr-cluster
 LogUri: "s3://cdp-logs-bucket/dollargeneral/"
 ReleaseLabel: "emr-5.27.0"
 Applications:
@@ -86,9 +86,11 @@ Steps:
         - --module
         - emr_process_gold
         - --env
-        - prod
+        - dev
         - --root-dir
         - s3://bridg-binary-registry/bridg-dollargeneral-transformer
+        - --type
+        - dg
 VisibleToAllUsers: True
 JobFlowRole: "EMR_EC2_DefaultRole"
 ServiceRole: "EMR_DefaultRole"
