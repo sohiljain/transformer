@@ -24,12 +24,17 @@ if __name__ == "__main__":
     my_parser.add_argument('--root-dir', type=str, help='Root Directory of project', required=False, default='/code')
     my_parser.add_argument('--env', nargs='?', default='',
                            help='which branch in config-repo will contain the config files')
+    my_parser.add_argument('--type', nargs='?', default='',
+                           help='which sub-branch in config-repo will contain the config files')
     args = my_parser.parse_args()
     args_dt = args.date
     root_dir = args.root_dir
 
     # Config file based on env
-    config_file = f'{args.env}-transformer.yml'
+    if args.type == "POPSHELF":
+        config_file = f'{args.env}-popshelf-transformer.yml'
+    else:
+        config_file = f'{args.env}-transformer.yml'
     config_file_path = f'{root_dir}/config/{config_file}'
     logging.info(f'Loading config from {config_file_path}')
     logging.info(f'Root directory has been set as {root_dir}')

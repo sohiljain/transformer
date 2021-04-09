@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # Set env values
-jobName = os.environ.get('BATCH_JOBNAME', 'cdp-dg-transformer')
+_jobName = os.environ.get('BATCH_JOBNAME', 'cdp-dg-transformer')
 jobQueue = os.environ.get('BATCH_JOBQUEUE', 'cdp-que')
 jobDefinition = os.environ.get('BATCH_JOBDEFINITION', 'cdp-dg-transformer')
 date_value = dt.datetime.now().strftime('%Y%m%d')  # Set default date as Today. This will be overridden.
@@ -38,6 +38,7 @@ def lambda_handler(event, context):
                 message = json.loads(message)
 
             action = message.get('Action', None)
+            type = message.get('Type', None)
             checks3flag = False
             logger.info(f'SNS Action - {action}')
 
@@ -49,19 +50,19 @@ def lambda_handler(event, context):
 
             if action == "Start EMR Process Gold":
                 try:
-                    return_msg = trigger_emr_process_gold(env_detail)
+                    return_msg = trigger_emr_process_gold(env_detail, type)
                 except Exception as e:
-                    return_msg = "DG Transformer EMR failed"
+                    return_msg = "{type} Transformer EMR failed"
                     send_sns_alert(return_msg, e)
                     logger.error(f"{return_msg} {e}", exc_info=True)
 
             elif action == "Manual":
                 try:
                     date_value = message['DateValue']
-                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail)
+                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail, type)
 
                 except Exception as e:
-                    return_msg = f"DG Transformer Batch failed. Either batch failed or incorrect event passed"
+                    return_msg = f"{type} Transformer Batch failed. Either batch failed or incorrect event passed"
                     send_sns_alert(return_msg, e)
                     logger.error(f"{return_msg} {e}", exc_info=True)
 
@@ -73,7 +74,12 @@ def lambda_handler(event, context):
                     s3_key = internal_record['s3']['object']['key']
                     logger.info(f's3_key: {s3_key}')
 
-                    if not s3_key.startswith('dollargeneral/1010/Daily/'):
+                    if 'popshelf' in s3_key:
+                        type = 'POPSHELF'
+                    else:
+                        type = 'DG'
+
+                    if not (s3_key.startswith('dollargeneral/1010/Daily/') or s3_key.startswith('dollargeneral-popshelf/1010/Daily')):
                         raise Exception
 
                     file_name = s3_key.split('/')[4]
@@ -81,7 +87,7 @@ def lambda_handler(event, context):
                     logger.info(f'Processing {file_name} for {date_value}')
 
                     try:
-                        return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail)
+                        return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail, type)
                     except Exception as e:
                         return_msg = "DG Transformer Batch failed"
                         send_sns_alert(return_msg, e)
@@ -94,15 +100,16 @@ def lambda_handler(event, context):
     return return_msg
 
 
-def trigger_emr_process_gold(env_emr):
+def trigger_emr_process_gold(env_emr, type):
     """
     Trigger EMR cluster to process the staging files
     :return: Success/Failure message
     """
     connection = boto3.client('emr', region_name='us-west-2')
-    logger.info(f"{env_emr} - Starting Dollargeneral Transformer pipeline")
+    logger.info(f"{env_emr} - Starting {type} Transformer pipeline")
 
     try:
+        jobName = f'{_jobName}-popshelf' if 'POPSHELF' in type else _jobName
 
         if is_another_emr_job_running(f'{jobName}-emr-cluster'):
             return "Terminating because another emr job is running"
@@ -120,7 +127,7 @@ def trigger_emr_process_gold(env_emr):
     return response
 
 
-def check_s3_files(date_value):
+def check_s3_files(date_value, type):
     """
     Return True if S3 1010 files are present for the date_value else False
     :param date_value: date for which files to be processed
@@ -128,7 +135,10 @@ def check_s3_files(date_value):
     """
     s3_client = boto3.client('s3')
     bucket = 'bridg-client-ftp'
-    remote_1010_path = 'dollargeneral/1010/Daily'
+    if 'POPSHELF' in type:
+        remote_1010_path = 'dollargeneral-popshelf/1010/Daily'
+    else:
+        remote_1010_path = 'dollargeneral/1010/Daily'
     paginator = s3_client.get_paginator('list_objects')
 
     # All 1010 files that need to be checked
@@ -151,7 +161,7 @@ def check_s3_files(date_value):
     return return_flag
 
 
-def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch):
+def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type):
     """
     Code to start pgp_decrypt batch job
     :param env_batch: dev/prod
@@ -161,15 +171,17 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch):
 
     # check if S3 1010 files are present for the datevalue
     if checks3flag == True:
-        if not check_s3_files(date_value):
+        if not check_s3_files(date_value, type):
             sys.exit(0)
 
     # starting pgp_decrypt batch job
     batch = boto3.client('batch')
-    command = f'--module batch_pgp_decrypt --date {date_value} --env {env_batch}'
+    command = f'--module batch_pgp_decrypt --date {date_value} --env {env_batch} --type {type}'
     command = command.split()
 
     try:
+        jobName = f'{_jobName}-popshelf' if 'POPSHELF' in type else _jobName
+
         if is_another_batch_job_running(jobName):
             return "Terminating because another batch job is running"
 
