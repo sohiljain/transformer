@@ -1,0 +1,97 @@
+# Copyright (c) 2020 Bridg Inc. All rights reserved.
+# @author Sohil Jain <sohil.jain@bridg.com>
+
+Name: cdp-dg-transformer-popshelf-emr-cluster
+LogUri: "s3://cdp-logs-bucket/dollargeneral/"
+ReleaseLabel: "emr-5.27.0"
+Applications:
+    - Name: "Spark"
+Configurations:
+    - Classification: spark-env
+      Configurations:
+        - Classification: export
+          Properties:
+            PYSPARK_PYTHON: "/usr/bin/python3"
+            ALERT_SNS_PARAM: "/cdp/SNS/Alarm"
+            ALERT_SNS_ARN: "arn:aws:sns:us-west-2:596832493770:cdp-SNS-1XM4Q7BJBS0UB-AlarmTopic-GWQ3SR7P7LPY"
+
+Instances:
+    HadoopVersion: Amazon 2.8.5
+    InstanceGroups:
+    - Name: Master nodes
+      Market: ON_DEMAND
+      InstanceRole: MASTER
+      InstanceType: m4.large
+      InstanceCount: 1
+      EbsConfiguration:
+        EbsBlockDeviceConfigs:
+        - VolumeSpecification:
+            VolumeType: gp2
+            SizeInGB: 20
+          VolumesPerInstance: 1
+        EbsOptimized: True
+    - Name: Slave nodes
+      Market: ON_DEMAND
+      InstanceRole: CORE
+      InstanceType: r5.xlarge
+      InstanceCount: 1
+      EbsConfiguration:
+        EbsBlockDeviceConfigs:
+        - VolumeSpecification:
+            VolumeType: gp2
+            SizeInGB: 100
+          VolumesPerInstance: 1
+        EbsOptimized: True
+#    - Name: Slave nodes
+#      Market: ON_DEMAND
+#      InstanceRole: TASK
+#      InstanceType: r5.xlarge
+#      InstanceCount: 1
+#      EbsConfiguration:
+#        EbsBlockDeviceConfigs:
+#        - VolumeSpecification:
+#            VolumeType: gp2
+#            SizeInGB: 100
+#          VolumesPerInstance: 1
+#        EbsOptimized: True
+    Ec2KeyName: cdp-admin
+    KeepJobFlowAliveWhenNoSteps: False
+    TerminationProtected: False
+    Ec2SubnetId: subnet-080ca4bae7f28e8a9
+Steps:
+    - Name: transformer-step-1
+      ActionOnFailure: TERMINATE_CLUSTER
+      HadoopJarStep:
+        Properties:
+        - Key: PYSPARK_PYTHON
+          Value: "/usr/bin/python3"
+        Jar: command-runner.jar
+        Args:
+        - sudo
+        - pip-3.6
+        - install
+        - boto3
+    - Name: transformer-step-2
+      ActionOnFailure: TERMINATE_CLUSTER
+      HadoopJarStep:
+        Properties:
+        - Key: PYSPARK_PYTHON
+          Value: "/usr/bin/python3"
+        Jar: command-runner.jar
+        Args:
+        - spark-submit
+        - --py-files
+        - s3://bridg-binary-registry/bridg-dollargeneral-transformer/dg_transformer_prepare.zip
+        - s3://bridg-binary-registry/bridg-dollargeneral-transformer/main/run.py
+        - --module
+        - emr_process_gold
+        - --env
+        - prod
+        - --root-dir
+        - s3://bridg-binary-registry/bridg-dollargeneral-transformer
+        - --type
+        - popshelf
+VisibleToAllUsers: True
+JobFlowRole: "EMR_EC2_DefaultRole"
+ServiceRole: "EMR_DefaultRole"
+ScaleDownBehavior: "TERMINATE_AT_TASK_COMPLETION"
