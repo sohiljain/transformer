@@ -5,7 +5,7 @@ import json
 import boto3
 from botocore.exceptions import ClientError
 import logging
-# from utils.utils import send_sns_alert
+from utils.utils import send_sns_alert
 
 error_subject = "Transformer: Secret Retrieval Failure"
 

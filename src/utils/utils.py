@@ -159,7 +159,7 @@ def gpg_decrytion(decryption_key=None, root_dir=None, bucket=None, gnupghome=Non
 
 
 
-def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table):
+def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table, type):
     """
     Records count check before storing at gold path
     Compare record count between temp and staging path
@@ -197,7 +197,7 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table):
                 logger.info("All validations successful")
             else:
                 # For tenders, we only send sns alerts otherwise Historical fails because historical doesn't match exact
-                send_sns_alert(f"Transformer: {table} Customer Name low matches or count mismatch", sns_msg)
+                send_sns_alert(f" {type} Transformer: {table} Customer Name low matches or count mismatch", sns_msg)
 
         # Count check between staging and temp table
         else:
@@ -207,11 +207,10 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table):
                 logger.info("All validations successful")
             else:
                 # Send alert if conditions are not met and exit
-                # send_sns_alert(f"Transformer: {table} Metrics Failure", sns_msg)
                 raise Exception(f"Count check failure for {table}. {sns_msg}")
     except Exception as e:
-        logger.error(f"Count check failure {e}")
-        raise Exception(f"Count check failure {e}")
+        logger.error(e)
+        raise Exception(e)
 
 
 def send_sns_alert(subject, message):

@@ -62,7 +62,7 @@ def create_temptable(table_name, spark, dg_config):
     logger.info(f'Created temp view for dg_{table_name}')
 
 
-def format_gold_file(table, spark, dg_config):
+def format_gold_file(table, spark, dg_config, type):
     """
     Renaming the gold file from part file
     :param table: table name
@@ -85,7 +85,7 @@ def format_gold_file(table, spark, dg_config):
 
     # Record count validation call
     # Proceed writing to gold only if validation succeeds otherwise call sns_alert
-    count_check(spark, dg_config.s3a_bucket, dg_config.s3_staging_path_1010, dg_config.s3_tmp_path, table)
+    count_check(spark, dg_config.s3a_bucket, dg_config.s3_staging_path_1010, dg_config.s3_tmp_path, table, type)
 
     try:
         tmp_path_2 = f'{dg_config.s3_tmp_path}/{table}/partition_col'
@@ -136,14 +136,14 @@ def process_gold(spark, dg_config: DgConfig, type):
         for table in ['transactions', 'product_category', 'product', 'organization', 'tenders', 'transaction_item', 'discounts']:
             logger.info(f'Starting {table}')
             create_temptable(table, spark, dg_config)
-            format_gold_file(table, spark, dg_config)
+            format_gold_file(table, spark, dg_config, type)
             logger.info(f'Finished {table}')
             logger.info('---------------------------')
 
     except Exception as e:
-        # send_sns_alert(f"{type} Transformer: EMR processing failed", e)
+        send_sns_alert(f"{type} Transformer: EMR processing failed", e)
         logger.error(f"{type} Transformer: EMR processing failed {e}", exc_info=True)
-        # raise Exception(f"{type} Transformer: EMR processing failed {e}")
+        raise Exception(f"{type} Transformer: EMR processing failed {e}")
 
     finally:
         s3_delete_file(dg_config.s3_tmp_path, dg_config.bucket)
