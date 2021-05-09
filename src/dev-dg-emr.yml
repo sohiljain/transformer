@@ -42,18 +42,18 @@ Instances:
             SizeInGB: 100
           VolumesPerInstance: 1
         EbsOptimized: True
-   - Name: Slave nodes
-     Market: ON_DEMAND
-     InstanceRole: TASK
-     InstanceType: r5.2xlarge
-     InstanceCount: 4
-     EbsConfiguration:
-       EbsBlockDeviceConfigs:
-       - VolumeSpecification:
-           VolumeType: gp2
-           SizeInGB: 100
-         VolumesPerInstance: 1
-       EbsOptimized: True
+    - Name: Slave nodes
+      Market: ON_DEMAND
+      InstanceRole: TASK
+      InstanceType: r5.2xlarge
+      InstanceCount: 4
+      EbsConfiguration:
+        EbsBlockDeviceConfigs:
+        - VolumeSpecification:
+            VolumeType: gp2
+            SizeInGB: 100
+          VolumesPerInstance: 1
+        EbsOptimized: True
     Ec2KeyName: cdp-admin
     KeepJobFlowAliveWhenNoSteps: False
     TerminationProtected: False
@@ -86,6 +86,7 @@ Steps:
         - --module
         - emr_process_gold
         - --env
+        - dev
         - dev
         - --root-dir
         - s3://bridg-binary-registry/bridg-dollargeneral-transformer

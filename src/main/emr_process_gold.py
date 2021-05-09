@@ -141,7 +141,7 @@ def process_gold(spark, dg_config: DgConfig, type):
             logger.info('---------------------------')
 
     except Exception as e:
-        send_sns_alert(f"{type} Transformer: EMR processing failed", e)
+        # send_sns_alert(f"{type} Transformer: EMR processing failed", e)
         logger.error(f"{type} Transformer: EMR processing failed {e}", exc_info=True)
         raise Exception(f"{type} Transformer: EMR processing failed {e}")
 
@@ -150,4 +150,3 @@ def process_gold(spark, dg_config: DgConfig, type):
         logger.info(f"Deleted temporary file path {dg_config.s3_tmp_path}")
         s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
         logger.info(f"Deleted staging file path {dg_config.s3_staging_path_1010}")
-
