@@ -87,7 +87,6 @@ Steps:
         - emr_process_gold
         - --env
         - dev
-        - dev
         - --root-dir
         - s3://bridg-binary-registry/bridg-dollargeneral-transformer
         - --type
