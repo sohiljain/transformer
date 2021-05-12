@@ -146,7 +146,8 @@ def process_gold(spark, dg_config: DgConfig, type):
         raise Exception(f"{type} Transformer: EMR processing failed {e}")
 
     finally:
-        s3_delete_file(dg_config.s3_tmp_path, dg_config.bucket)
-        logger.info(f"Deleted temporary file path {dg_config.s3_tmp_path}")
-        s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
-        logger.info(f"Deleted staging file path {dg_config.s3_staging_path_1010}")
+        pass
+        # s3_delete_file(dg_config.s3_tmp_path, dg_config.bucket)
+        # logger.info(f"Deleted temporary file path {dg_config.s3_tmp_path}")
+        # s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
+        # logger.info(f"Deleted staging file path {dg_config.s3_staging_path_1010}")
