@@ -207,6 +207,12 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table, typ
                 logger.info("All validations successful")
             else:
                 # Send alert if conditions are not met and exit
+                logger.info("Transformed Counts")
+                df_transformed.groupBy("dt").count().show()
+
+                logger.info("Staging Counts")
+                df_staging.groupBy("dt").count().show()
+
                 raise Exception(f"Count check failure for {table}. {sns_msg}")
     except Exception as e:
         logger.error(e)
