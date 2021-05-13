@@ -141,7 +141,7 @@ def process_gold(spark, dg_config: DgConfig, type):
             logger.info('---------------------------')
 
     except Exception as e:
-        # send_sns_alert(f"{type} Transformer: EMR processing failed", e)
+        send_sns_alert(f"{type} Transformer: EMR processing failed", e)
         logger.error(f"{type} Transformer: EMR processing failed {e}", exc_info=True)
         raise Exception(f"{type} Transformer: EMR processing failed {e}")
 
