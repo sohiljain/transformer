@@ -85,7 +85,7 @@ def format_gold_file(table, spark, dg_config, type):
     else:
         tmp_path = f"{dg_config.s3a_bucket}/{dg_config.s3_tmp_path}/{table}/"
         df.repartition(1, 'partition_col').write.partitionBy('partition_col').csv(tmp_path, header=True,
-                                            compression='gzip', sep='|', emptyValue='', mode='overwrite')
+                            compression='gzip', sep='|', emptyValue='', mode='overwrite', quote='"', escape='"')
         logger.info(f'{tmp_path} writing done')
 
         # Record count validation call. Proceed writing to gold only if validation succeeds otherwise call sns_alert
