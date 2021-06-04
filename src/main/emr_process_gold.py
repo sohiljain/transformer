@@ -74,44 +74,48 @@ def format_gold_file(table, spark, dg_config, type):
         logger.info(f'Executing query {dg_config.table_queries.get(table)}')
         df = spark.sql(dg_config.table_queries.get(table))
 
+    except Exception as e:
+        logger.error(f'{e} Error in reading staging file in spark')
+        raise Exception(f'{e} Error in reading staging file in spark')
+
+    if df.count() == 0:
+        logger.error("--------------------")
+        logger.error(f"Zero Records in File for table: {table}")
+
+    else:
         tmp_path = f"{dg_config.s3a_bucket}/{dg_config.s3_tmp_path}/{table}/"
         df.repartition(1, 'partition_col').write.partitionBy('partition_col').csv(tmp_path, header=True,
                                             compression='gzip', sep='|', emptyValue='', mode='overwrite')
         logger.info(f'{tmp_path} writing done')
 
-    except Exception as e:
-        logger.error(f'{e} Error in read write spark file')
-        raise Exception(f'{e} Error in read write spark file')
+        # Record count validation call. Proceed writing to gold only if validation succeeds otherwise call sns_alert
+        count_check(spark, dg_config.s3a_bucket, dg_config.s3_staging_path_1010, dg_config.s3_tmp_path, table, type)
 
-    # Record count validation call
-    # Proceed writing to gold only if validation succeeds otherwise call sns_alert
-    count_check(spark, dg_config.s3a_bucket, dg_config.s3_staging_path_1010, dg_config.s3_tmp_path, table, type)
+        try:
+            tmp_path_2 = f'{dg_config.s3_tmp_path}/{table}/partition_col'
 
-    try:
-        tmp_path_2 = f'{dg_config.s3_tmp_path}/{table}/partition_col'
+            logger.info(f'Moving files from {tmp_path_2} to gold')
+            for key in get_matching_s3_keys(dg_config.bucket, prefix=tmp_path_2, suffix='.gz'):
+                copy_source = {
+                    'Bucket': dg_config.bucket,
+                    'Key': key
+                }
 
-        logger.info(f'Moving files from {tmp_path_2} to gold')
-        for key in get_matching_s3_keys(dg_config.bucket, prefix=tmp_path_2, suffix='.gz'):
-            copy_source = {
-                'Bucket': dg_config.bucket,
-                'Key': key
-            }
+                dt = key.split('/')[-2].split('=')[1]
 
-            dt = key.split('/')[-2].split('=')[1]
+                #TODO s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}_{key}.psv.gz' - To make mulitple part files and remove repartition - Sid
+                s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}.psv.gz'
+                if 'transaction_item' in s3_gold_temp:
+                    s3_gold_temp = s3_gold_temp.replace('transaction_', 'line_')
+                logger.info(f'Moving files to {s3_gold_temp} ')
+                s3_delete_file(s3_gold_temp, dg_config.bucket)
+                s3_resource.meta.client.copy(copy_source, dg_config.bucket, s3_gold_temp)
 
-            #TODO s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}_{key}.psv.gz' - To make mulitple part files and remove repartition - Sid
-            s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}.psv.gz'
-            if 'transaction_item' in s3_gold_temp:
-                s3_gold_temp = s3_gold_temp.replace('transaction_', 'line_')
-            logger.info(f'Moving files to {s3_gold_temp} ')
-            s3_delete_file(s3_gold_temp, dg_config.bucket)
-            s3_resource.meta.client.copy(copy_source, dg_config.bucket, s3_gold_temp)
+            logger.info(f'{tmp_path_2} renamed to {s3_gold_temp}')
 
-        logger.info(f'{tmp_path_2} renamed to {s3_gold_temp}')
-
-    except Exception as e:
-        logger.error(f'{e} Unable to rename file')
-        raise Exception(f'{e} Unable to rename file')
+        except Exception as e:
+            logger.error(f'{e} Unable to rename file')
+            raise Exception(f'{e} Unable to rename file')
 
 
 def process_gold(spark, dg_config: DgConfig, type):
@@ -141,7 +145,7 @@ def process_gold(spark, dg_config: DgConfig, type):
             logger.info('---------------------------')
 
     except Exception as e:
-        send_sns_alert(f"{type} Transformer: EMR processing failed", e)
+        # send_sns_alert(f"{type} Transformer: EMR processing failed", e)
         logger.error(f"{type} Transformer: EMR processing failed {e}", exc_info=True)
         raise Exception(f"{type} Transformer: EMR processing failed {e}")
 
