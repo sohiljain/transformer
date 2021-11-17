@@ -6,7 +6,6 @@ pipeline {
     booleanParam(name: "DEPLOY_DG_TRANSFORMER_TO_TOWERBRIDG",
                  description: "Deploys DG TRANSFORMER to TowerBridg",
                  defaultValue: false)
-    }
     booleanParam(name: "DEPLOY_DG_TRANSFORMER_TO_PRODUCTION",
                  description: "Deploys DG TRANSFORMER to Production",
                  defaultValue: false)
