@@ -134,7 +134,7 @@ def check_s3_files(date_value, type):
     :return: Return True if S3 1010 files are present for the date_value else False
     """
     s3_client = boto3.client('s3')
-    bucket = 'bridg-client-ftp'
+    bucket = os.getenv('S3_BUCKET_RAW_DATA_1')
     if 'popshelf' in type:
         remote_1010_path = 'dollargeneral-popshelf/1010/Daily'
     else:

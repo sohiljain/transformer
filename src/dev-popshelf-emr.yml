@@ -2,7 +2,7 @@
 # @author Sohil Jain <sohil.jain@bridg.com>
 
 Name: dev-cdp-dg-transformer-popshelf-emr-cluster
-LogUri: "s3://cdp-logs-bucket/dollargeneral/"
+LogUri: "s3://dev-cdp-logs-bucket/dollargeneral/"
 ReleaseLabel: "emr-5.27.0"
 Applications:
     - Name: "Spark"
@@ -57,7 +57,7 @@ Instances:
     Ec2KeyName: cdp-admin
     KeepJobFlowAliveWhenNoSteps: False
     TerminationProtected: False
-    Ec2SubnetId: subnet-080ca4bae7f28e8a9
+    Ec2SubnetId: subnet-01d153dc6df563b60 #subnet-080ca4bae7f28e8a9
 Steps:
     - Name: transformer-step-1
       ActionOnFailure: TERMINATE_CLUSTER
@@ -81,14 +81,14 @@ Steps:
         Args:
         - spark-submit
         - --py-files
-        - s3://bridg-binary-registry/bridg-dollargeneral-transformer/dg_transformer_prepare.zip
-        - s3://bridg-binary-registry/bridg-dollargeneral-transformer/main/run.py
+        - s3://dev-cdp-data-lake/bridg-dollargeneral-transformer/dg_transformer_prepare.zip
+        - s3://dev-cdp-data-lake/bridg-dollargeneral-transformer/main/run.py
         - --module
         - emr_process_gold
         - --env
         - dev
         - --root-dir
-        - s3://bridg-binary-registry/bridg-dollargeneral-transformer
+        - s3://dev-cdp-data-lake/bridg-dollargeneral-transformer
         - --type
         - popshelf
 VisibleToAllUsers: True

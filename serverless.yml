@@ -130,14 +130,14 @@ resources:
                   Action:
                     - secretsmanager:*
                   Resource:
-                    - "arn:aws:secretsmanager:us-west-2:596832493770:secret:/cdp/SecretManager/dollargeneral-transformer/-YjmQfu"
+                    - "arn:aws:secretsmanager:us-west-2:596832493770:secret:/${self:custom.BRIDG_ENV_NAME}/SecretManager/dollargeneral-transformer/-YjmQfu"
                 - Effect: Allow
                   Action:
                     - ssm:GetParametersByPath
                     - ssm:GetParameters
                     - ssm:GetParameter
                   Resource:
-                    - "arn:aws:ssm:us-west-2:596832493770:parameter/cdp/SNS/Alarm"
+                    - "arn:aws:ssm:us-west-2:596832493770:parameter/${self:custom.BRIDG_ENV_NAME}/SNS/Alarm"
                 - Effect: Allow
                   Action:
                     - SNS:Publish

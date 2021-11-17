@@ -42,7 +42,7 @@ if __name__ == "__main__":
         spark = SparkSession.builder.getOrCreate()
         s3 = boto3.client('s3', region_name='us-west-2')
         s3_bucket = root_dir.replace('s3://', '').split('/')[0]
-        s3_key = root_dir.replace('s3://', '').split('/')[1]
+        s3_key = '/'.join(root_dir.replace('s3://', '').split('/')[1:])
         spark.sparkContext.addPyFile(f'{root_dir}/dg_transformer_prepare.zip')
         s3.download_file(s3_bucket, f'{s3_key}/config/{config_file}', config_file)
         config_file_path = config_file
