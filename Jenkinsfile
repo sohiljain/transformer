@@ -43,6 +43,7 @@ pipeline {
             BATCH_JOBDEFINITION = 'cdp-dg-transformer'
 //             ALERT_SNS_PARAM = '/dev cdp/SNS/Alarm'
         	BRIDG_1_ACCOUNT = credentials('bridg1-account-id')
+        	BRIDG_CONFIG_URL = 'http://config.dev-cdp.towerbridg.com/'
             SUBNET_A = 'subnet-051cad2b010989d3a'
             SUBNET_B = 'subnet-06d4b6a3c6e279276'
             SUBNET_C = 'subnet-08f6d84463db5e1f8'
@@ -54,8 +55,8 @@ pipeline {
           sh 'pip install --target ./src pyyaml'
           sh 'pip install --target ./src python-gnupg==0.4.6'
           zip zipFile: 'src/dg_transformer_prepare.zip', archive: false, dir: 'src'
-          sh 'aws s3 rm s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
-          sh 'aws s3 cp src s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
+//           sh 'aws s3 rm s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
+//           sh 'aws s3 cp src s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
 //           sh 'python3 deploy_bridg_service.py'
           sh 'serverless deploy --stage development --verbose'
       }
