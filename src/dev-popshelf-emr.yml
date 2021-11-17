@@ -81,14 +81,14 @@ Steps:
         Args:
         - spark-submit
         - --py-files
-        - s3://dev-cdp-data-lake/bridg-dollargeneral-transformer/dg_transformer_prepare.zip
-        - s3://dev-cdp-data-lake/bridg-dollargeneral-transformer/main/run.py
+        - s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/dg_transformer_prepare.zip
+        - s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/main/run.py
         - --module
         - emr_process_gold
         - --env
         - dev
         - --root-dir
-        - s3://dev-cdp-data-lake/bridg-dollargeneral-transformer
+        - s3://towerbridg-binary-registry/bridg-dollargeneral-transformer
         - --type
         - popshelf
 VisibleToAllUsers: True
