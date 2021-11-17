@@ -32,6 +32,8 @@ pipeline {
         }
       }
       environment {
+            AWS_ACCESS_KEY_ID = credentials('aws-bridg1-id')
+            AWS_SECRET_ACCESS_KEY = credentials('aws-bridg1-secret')
         	DEPLOYMENT = 'development'
         	AWS_DEFAULT_REGION = 'us-west-2'
         	S3_BUCKET_RAW_DATA_1 = 'dev-cdp-data-lake'
@@ -55,8 +57,8 @@ pipeline {
           sh 'pip install --target ./src pyyaml'
           sh 'pip install --target ./src python-gnupg==0.4.6'
           zip zipFile: 'src/dg_transformer_prepare.zip', archive: false, dir: 'src'
-//           sh 'aws s3 rm s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
-//           sh 'aws s3 cp src s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
+          sh 'aws s3 rm s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
+          sh 'aws s3 cp src s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
 //           sh 'python3 deploy_bridg_service.py'
           sh 'serverless deploy --stage development --verbose'
       }
