@@ -33,6 +33,8 @@ pipeline {
       }
       environment {
         	DEPLOYMENT = 'development'
+        AWS_ACCESS_KEY_ID = credentials('shared-aws-secret-key-id')
+AWS_SECRET_ACCESS_KEY = credentials('shared-aws-secret-access-key')
         	AWS_DEFAULT_REGION = 'us-west-2'
         	S3_BUCKET_RAW_DATA_1 = 'development-data-sea'
         	SNS_TOPIC_ARN_1 = 'dg-transformer-lambda-sns'
