@@ -43,7 +43,7 @@ provider:
   timeout: 600 # The default is 6
   region: ${self:custom.AWS_REGION}
   versionFunctions: false
-  deploymentBucket: cdp.com.serverless.${self:custom.AWS_REGION}.deploys
+  deploymentBucket: ${self:custom.BRIDG_ENV_NAME}.com.serverless.${self:custom.AWS_REGION}.deploys
   role: DollarGeneralTransformerRole
   iamRoleStatements:
     - Effect: "Allow"
