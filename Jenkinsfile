@@ -56,7 +56,7 @@ pipeline {
           sh 'pip install --target ./src python-gnupg==0.4.6'
           zip zipFile: 'src/dg_transformer_prepare.zip', archive: false, dir: 'src'
 //           sh 'aws s3 rm s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
-//           sh 'aws s3 cp src s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
+          sh 'aws s3 cp src s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
 //           sh 'python3 deploy_bridg_service.py'
           sh 'serverless deploy --stage development --verbose'
       }
