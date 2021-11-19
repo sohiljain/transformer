@@ -36,7 +36,7 @@ pipeline {
         AWS_ACCESS_KEY_ID = credentials('shared-aws-secret-key-id')
 AWS_SECRET_ACCESS_KEY = credentials('shared-aws-secret-access-key')
         	AWS_DEFAULT_REGION = 'us-west-2'
-        	S3_BUCKET_RAW_DATA_1 = 'development-data-sea'
+        	S3_BUCKET_RAW_DATA_1 = 'dev-cdp-data-lake'
         	SNS_TOPIC_ARN_1 = 'dg-transformer-lambda-sns'
         	SNS_TOPIC_ARN_2 = 'data_ingestion_ftp_sync'
         	BRIDG_ENV_NAME = 'dev-cdp'
@@ -52,14 +52,14 @@ AWS_SECRET_ACCESS_KEY = credentials('shared-aws-secret-access-key')
             SECURITY_GROUP = 'sg-0710b844e08d5cb2e'
       }
       steps {
-//           sh '$(aws ecr get-login --no-include-email --region us-west-2)'
-//  	      sh 'aws s3 cp s3://bridg-devops-development/bin/deploy_bridg_service.py .'
+          sh '$(aws ecr get-login --no-include-email --region us-west-2)'
+ 	      sh 'aws s3 cp s3://bridg-devops-development/bin/deploy_bridg_service.py .'
           sh 'pip install --target ./src pyyaml'
           sh 'pip install --target ./src python-gnupg==0.4.6'
           zip zipFile: 'src/dg_transformer_prepare.zip', archive: false, dir: 'src'
-//           sh 'aws s3 rm s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
+          sh 'aws s3 rm s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
           sh 'aws s3 cp src s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
-//           sh 'python3 deploy_bridg_service.py'
+          sh 'python3 deploy_bridg_service.py'
           sh 'serverless deploy --stage development --verbose'
       }
     }

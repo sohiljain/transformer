@@ -160,5 +160,6 @@ functions:
       BATCH_JOBDEFINITION: ${self:custom.BATCH_JOBDEFINITION}
       ALERT_SNS_PARAM: ${self:custom.ALERT_SNS_PARAM}
       BRIDG_ENV_NAME: ${self:custom.BRIDG_ENV_NAME}
+      AWS_DEFAULT_REGION: ${self:custom.AWS_DEFAULT_REGION}
     tags:
       Environment: ${self:custom.BRIDG_ENV_NAME}

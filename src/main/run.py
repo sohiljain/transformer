@@ -26,12 +26,14 @@ if __name__ == "__main__":
                            help='which branch in config-repo will contain the config files')
     my_parser.add_argument('--type', nargs='?', default='',
                            help='which sub-branch in config-repo will contain the config files')
+    my_parser.add_argument('--schedule', nargs='?', default='',
+                           help='schedule of file in config-repo daily or weekly')
     args = my_parser.parse_args()
     args_dt = args.date
     root_dir = args.root_dir
 
     # Config file based on env
-    config_file = f'{args.env}-{args.type}-transformer.yml'
+    config_file = f'{args.env}-{args.type}-{args.schedule}-transformer.yml'
     config_file_path = f'{root_dir}/config/{config_file}'
     logging.info(f'Loading config from {config_file_path}')
     logging.info(f'Root directory has been set as {root_dir}')
