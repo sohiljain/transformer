@@ -192,7 +192,7 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type, s3_key, 
         jobName = f'{_jobName}-{schedule}-popshelf' if 'popshelf' in type else f'{_jobName}-{schedule}'
 
         if is_another_batch_job_running(jobName) and is_another_emr_job_running(f'{jobName}-emr-cluster'):
-            return "Terminating because another batch job is running"
+            return "Terminating because another batch or emr job is running"
 
         submit_job_response = batch.submit_job(
             jobName=jobName,
@@ -204,8 +204,8 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type, s3_key, 
         batch_response_message = 'Submitted job {} {} to the job queue {}'.format(jobName, job_id, jobQueue)
 
     except Exception as e:
-        logger.error(f'Failed to start EMR job')
-        raise Exception(f"Failed to start EMR job {e}")
+        logger.error(f'Failed to start Batch job')
+        raise Exception(f"Failed to start Batch job {e}")
 
     return batch_response_message
 

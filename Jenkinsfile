@@ -40,9 +40,9 @@ pipeline {
         	SNS_TOPIC_ARN_1 = 'dg-transformer-lambda-sns'
         	SNS_TOPIC_ARN_2 = 'data_ingestion_ftp_sync'
         	BRIDG_ENV_NAME = 'dev-cdp'
-        	BATCH_JOBNAME = 'cdp-dg-transformer'
+        	BATCH_JOBNAME = 'dev-cdp-dg-transformer'
             BATCH_JOBQUEUE = 'dev-cdp-que'
-            BATCH_JOBDEFINITION = 'cdp-dg-transformer'
+            BATCH_JOBDEFINITION = 'dev-cdp-dg-transformer'
             ALERT_SNS_PARAM = '/dev-cdp/SNS/Alarm'
         	BRIDG_1_ACCOUNT = credentials('bridg1-account-id')
         	BRIDG_CONFIG_URL = 'http://config.dev-cdp.towerbridg.com/'
