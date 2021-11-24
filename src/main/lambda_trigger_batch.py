@@ -39,6 +39,7 @@ def lambda_handler(event, context):
 
             action = message.get('Action', None)
             type = message.get('Type', None)
+            schedule_name = message.get('Schedule', None)
             checks3flag = False
             logger.info(f'SNS Action - {action}')
 
@@ -50,7 +51,7 @@ def lambda_handler(event, context):
 
             if action == "Start EMR Process Gold":
                 try:
-                    return_msg = trigger_emr_process_gold(env_detail, type)
+                    return_msg = trigger_emr_process_gold(env_detail, type, schedule_name)
                 except Exception as e:
                     return_msg = "{type} Transformer EMR failed"
                     # send_sns_alert(return_msg, e)
@@ -59,11 +60,7 @@ def lambda_handler(event, context):
             elif action == "Manual":
                 try:
                     date_value = message['DateValue']
-                    for internal_record in message['Records']:
-                        s3_key = internal_record['s3']['object']['key']
-                        logger.info(f's3_key: {s3_key}')
-                    schedule = 'weekly' if (s3_key.startswith('dollargeneral/1010/Weekly/')) else 'daily'
-                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail, type, s3_key, schedule)
+                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail, type, s3_key, schedule_name)
 
                 except Exception as e:
                     return_msg = f"{type} Transformer Batch failed. Either batch failed or incorrect event passed"
@@ -105,7 +102,7 @@ def lambda_handler(event, context):
     return return_msg
 
 
-def trigger_emr_process_gold(env_emr, type):
+def trigger_emr_process_gold(env_emr, type, schedule_name):
     """
     Trigger EMR cluster to process the staging files
     :return: Success/Failure message
@@ -119,7 +116,7 @@ def trigger_emr_process_gold(env_emr, type):
         if is_another_emr_job_running(f'{jobName}-emr-cluster'):
             return "Terminating because another emr job is running"
 
-        with open(f'/var/task/{env_emr}-{type}-emr.yml', 'r') as yml_file:
+        with open(f'/var/task/{env_emr}-{type}-{schedule_name}-emr.yml', 'r') as yml_file:
             emr_conf = yaml.safe_load(yml_file)
         cluster_id = connection.run_job_flow(**emr_conf)
         response = f"Cluster created with the step..{cluster_id['JobFlowId']}"
