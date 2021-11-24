@@ -54,7 +54,7 @@ Instances:
 #            SizeInGB: 100
 #          VolumesPerInstance: 1
 #        EbsOptimized: True
-    Ec2KeyName: cdp-admin
+    Ec2KeyName: towerbridg
     KeepJobFlowAliveWhenNoSteps: False
     TerminationProtected: False
     Ec2SubnetId: subnet-01d153dc6df563b60 #subnet-080ca4bae7f28e8a9
