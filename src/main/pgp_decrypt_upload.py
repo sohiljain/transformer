@@ -135,7 +135,7 @@ def process_aurus(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y
         raise Exception(f"S3 Object not found {prefix}\n {e}")
 
 
-def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type):
+def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
     """
     Serially download & upload Aurus/1010 files from bridg-client-ftp to s3 transformed directory
     1. Download raw Aurus/1010 files from the ftp bucket according to args_dt date/date_range provided
@@ -186,7 +186,7 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type):
                 process_aurus(dg_config, root_dir, args_dt)
             process_1010(dg_config, root_dir, args_dt)
 
-        msg = {"Action": "Start EMR Process Gold", "EnvDetail": env, "Type" : type}
+        msg = {"Action": "Start EMR Process Gold", "EnvDetail": env, "Type" : type, "Schedule": schedule}
         json_msg = json.dumps(msg)
         logger.info(f"Sending message - {json_msg} to SNS")
 

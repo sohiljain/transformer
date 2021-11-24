@@ -247,7 +247,7 @@ def send_sns_alert(subject, message):
 
         # sending sns message for alerting on slack and email
         sns_client = boto3.client('sns', region_name='us-west-2')
-        # sns_client.publish(TopicArn=sns_topic_arn, Subject=subject, Message=str(message))
+        sns_client.publish(TopicArn=sns_topic_arn, Subject=subject, Message=str(message))
     except Exception as e:
         logger.error(f"Failed to publish SNS message {e}", exc_info=True)
         raise Exception(f"Failed to publish SNS message {e}")
