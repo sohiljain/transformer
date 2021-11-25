@@ -197,7 +197,8 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table, typ
                 logger.info("All validations successful")
             else:
                 # For tenders, we only send sns alerts otherwise Historical fails because historical doesn't match exact
-                send_sns_alert(f" {type} Transformer: {table} Customer Name low matches or count mismatch", sns_msg)
+                # send_sns_alert(f" {type} Transformer: {table} Customer Name low matches or count mismatch", sns_msg)
+                logger.info(f"Customer Name low matches or count mismatch {sns_msg}")
 
         # Count check between staging and temp table
         else:
