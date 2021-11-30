@@ -20,7 +20,7 @@ date_value = dt.datetime.now().strftime('%Y%m%d')  # Set default date as Today. 
 
 
 # Lambda declaration
-def lambda_handler(event, context):
+def lambda_handler(event):
     """
     # Entry point for DG transformer
     # Check for SNS event and trigger batch or EMR appropriate
@@ -137,13 +137,13 @@ def check_s3_files(date_value, type, s3_key, schedule):
     """
     s3_client = boto3.client('s3')
     bucket = os.getenv('S3_BUCKET_RAW_DATA_1')
-    if 'popshelf' in type:
+    if 'daily' in schedule and ('popshelf' in type or 'popshelf' in s3_key):
         remote_1010_path = 'dollargeneral-popshelf/1010/Daily'
-    if 'Weekly' in schedule and 'dg' in type:
+    if 'weekly' in schedule and ('dg' in type or 'dg' in s3_key):
         remote_1010_path = 'dollargeneral/1010/Weekly'
-    if 'Weekly' in schedule and 'popshelf' in type:
+    if 'weekly' in schedule and ('popshelf' in type or 'popshelf' in s3_key):
         remote_1010_path = 'dollargeneral-popshelf/1010/Weekly'
-    else:
+    if 'daily' in schedule and ('dg' in type or 'dg' in s3_key):
         remote_1010_path = 'dollargeneral/1010/Daily'
     paginator = s3_client.get_paginator('list_objects')
 
