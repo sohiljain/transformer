@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # Config file based on env
     config_file = f'{args.env}-{args.type}-{args.schedule}-transformer.yml'
-    config_file_path = f'{root_dir}/config/{config_file}'
+    config_file_path = f'{root_dir}/config/{args.env}/{config_file}'
     logging.info(f'Loading config from {config_file_path}')
     logging.info(f'Root directory has been set as {root_dir}')
 
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         s3_bucket = root_dir.replace('s3://', '').split('/')[0]
         s3_key = '/'.join(root_dir.replace('s3://', '').split('/')[1:])
         spark.sparkContext.addPyFile(f'{root_dir}/dg_transformer_prepare.zip')
-        s3.download_file(s3_bucket, f'{s3_key}/config/{config_file}', config_file)
+        s3.download_file(s3_bucket, f'{s3_key}/config/{args.env}/{config_file}', config_file)
         config_file_path = config_file
 
     # Parse the yaml config file

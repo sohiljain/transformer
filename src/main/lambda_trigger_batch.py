@@ -116,7 +116,7 @@ def trigger_emr_process_gold(env_emr, type, schedule_name):
         if is_another_emr_job_running(f'{jobName}-emr-cluster'):
             return "Terminating because another emr job is running"
 
-        with open(f'/var/task/{env_emr}-{type}-{schedule_name}-emr.yml', 'r') as yml_file:
+        with open(f'/var/task/emrconfig/{env_emr}/{env_emr}-{type}-{schedule_name}-emr.yml', 'r') as yml_file:
             emr_conf = yaml.safe_load(yml_file)
         cluster_id = connection.run_job_flow(**emr_conf)
         response = f"Cluster created with the step..{cluster_id['JobFlowId']}"
@@ -129,7 +129,7 @@ def trigger_emr_process_gold(env_emr, type, schedule_name):
     return response
 
 
-def check_s3_files(date_value, type, s3_key):
+def check_s3_files(date_value, type, s3_key, schedule):
     """
     Return True if S3 1010 files are present for the date_value else False
     :param date_value: date for which files to be processed
@@ -139,8 +139,10 @@ def check_s3_files(date_value, type, s3_key):
     bucket = os.getenv('S3_BUCKET_RAW_DATA_1')
     if 'popshelf' in type:
         remote_1010_path = 'dollargeneral-popshelf/1010/Daily'
-    if 'Weekly' in s3_key:
+    if 'Weekly' in schedule and 'dg' in type:
         remote_1010_path = 'dollargeneral/1010/Weekly'
+    if 'Weekly' in schedule and 'popshelf' in type:
+        remote_1010_path = 'dollargeneral-popshelf/1010/Weekly'
     else:
         remote_1010_path = 'dollargeneral/1010/Daily'
     paginator = s3_client.get_paginator('list_objects')
@@ -176,7 +178,7 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type, s3_key, 
 
     # check if S3 1010 files are present for the datevalue
     if checks3flag == True:
-        if not check_s3_files(date_value, type, s3_key):
+        if not check_s3_files(date_value, type, s3_key, schedule):
             sys.exit(0)
 
     # starting pgp_decrypt batch job

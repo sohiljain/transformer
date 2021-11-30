@@ -91,6 +91,8 @@ Steps:
         - s3://towerbridg-binary-registry/bridg-dollargeneral-transformer
         - --type
         - dg
+        - --schedule
+        - weekly
 VisibleToAllUsers: True
 JobFlowRole: "EMR_EC2_DefaultRole"
 ServiceRole: "EMR_DefaultRole"
