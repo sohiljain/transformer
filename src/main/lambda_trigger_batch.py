@@ -60,8 +60,8 @@ def lambda_handler(event, context):
             elif action == "Manual":
                 try:
                     date_value = message['DateValue']
-                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail, type, s3_key,
-                                                           schedule_name)
+                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail, type, schedule_name,
+                                                           s3_key = None )
 
                 except Exception as e:
                     return_msg = f"{type} Transformer Batch failed. Either batch failed or incorrect event passed"
@@ -98,8 +98,8 @@ def lambda_handler(event, context):
                     logger.info(f'Processing {file_name} for {date_value}')
 
                     try:
-                        return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail, type, s3_key,
-                                                               schedule)
+                        return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail, type, schedule,
+                                                               s3_key)
                     except Exception as e:
                         return_msg = f"{type} Transformer Batch failed"
                         # send_sns_alert(return_msg, e)
@@ -183,7 +183,7 @@ def check_s3_files(date_value, type, s3_key, schedule):
     return return_flag
 
 
-def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type, s3_key, schedule):
+def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type, schedule, s3_key):
     """
     Code to start pgp_decrypt batch job
     :param env_batch: dev/prod

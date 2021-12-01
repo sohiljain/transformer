@@ -97,3 +97,5 @@ VisibleToAllUsers: True
 JobFlowRole: "EMR_EC2_DefaultRole"
 ServiceRole: "EMR_DefaultRole"
 ScaleDownBehavior: "TERMINATE_AT_TASK_COMPLETION"
+
+#TODO bump up memory
