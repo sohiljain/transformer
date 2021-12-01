@@ -3,16 +3,17 @@
 
 bucket: bridg-client-ftp
 s3a_bucket: s3a://bridg-client-ftp
-s3_staging_path: dollargeneral/transformed/staging
-s3_staging_path_1010: dollargeneral/transformed/staging/1010
-s3_tmp_path: dollargeneral/transformed/temp
-s3_gold_path: dollargeneral/transformed/gold
-s3_archive_path: dollargeneral/transformed/archive
-remote_1010_path: dollargeneral/1010/Daily
+s3_staging_path: dollargeneral-popshelf/transformed/staging
+s3_staging_path_1010: dollargeneral-popshelf/transformed/weekly/staging/1010
+s3_tmp_path: dollargeneral-popshelf/transformed/weekly/temp
+s3_gold_path: dollargeneral-popshelf/transformed/weekly/gold
+s3_archive_path: dollargeneral-popshelf/transformed/weekly/archive
+remote_1010_path: dollargeneral-popshelf/1010/Weekly
 remote_Aurus_path: dollargeneral/Aurus/Daily
 local_Path: Documents/DG
 secret: /cdp/SecretManager/dollargeneral-transformer/
-aurus_startdate: '20200910'
+aurus_startdate: '99990101' #Infinite start date to skip aurus decryption in weekly schedule
+
 
 table_queries:
 

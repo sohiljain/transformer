@@ -20,7 +20,7 @@ date_value = dt.datetime.now().strftime('%Y%m%d')  # Set default date as Today. 
 
 
 # Lambda declaration
-def lambda_handler(event):
+def lambda_handler(event, context):
     """
     # Entry point for DG transformer
     # Check for SNS event and trigger batch or EMR appropriate
@@ -60,7 +60,8 @@ def lambda_handler(event):
             elif action == "Manual":
                 try:
                     date_value = message['DateValue']
-                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail, type, s3_key, schedule_name)
+                    return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail, type, s3_key,
+                                                           schedule_name)
 
                 except Exception as e:
                     return_msg = f"{type} Transformer Batch failed. Either batch failed or incorrect event passed"
@@ -80,16 +81,25 @@ def lambda_handler(event):
                     else:
                         type = 'dg'
 
-                    if not (s3_key.startswith('dollargeneral/1010/Daily/') or s3_key.startswith('dollargeneral-popshelf/1010/Daily') or s3_key.startswith('dollargeneral/1010/Weekly/')):
+                    if not (s3_key.startswith('dollargeneral/1010/Daily/') or s3_key.startswith(
+                            'dollargeneral-popshelf/1010/Daily') or s3_key.startswith('dollargeneral/1010/Weekly/')
+                            or s3_key.startswith('dollargeneral-popshelf/1010/Weekly/')):
                         raise Exception
 
-                    schedule = 'weekly' if (s3_key.startswith('dollargeneral/1010/Weekly/')) else 'daily'
+                    if 'Weekly' in s3_key:
+                        schedule = 'weekly'
+                    elif 'Daily' in s3_key:
+                        schedule = 'daily'
+                    else:
+                        raise Exception(f'schedule not found in s3_key {s3_key}')
+
                     file_name = s3_key.split('/')[4]
                     date_value = file_name.rsplit('_')[-1][:8]
                     logger.info(f'Processing {file_name} for {date_value}')
 
                     try:
-                        return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail, type, s3_key, schedule)
+                        return_msg = trigger_batch_pgp_decrypt(date_value, checks3flag, env_detail, type, s3_key,
+                                                               schedule)
                     except Exception as e:
                         return_msg = f"{type} Transformer Batch failed"
                         # send_sns_alert(return_msg, e)
@@ -116,7 +126,7 @@ def trigger_emr_process_gold(env_emr, type, schedule_name):
         if is_another_emr_job_running(f'{jobName}-emr-cluster'):
             return "Terminating because another emr job is running"
 
-        with open(f'/var/task/emrconfig/{env_emr}/{env_emr}-{type}-{schedule_name}-emr.yml', 'r') as yml_file:
+        with open(f'/var/task/config/emr/{env_emr}/{env_emr}-{type}-{schedule_name}-emr.yml', 'r') as yml_file:
             emr_conf = yaml.safe_load(yml_file)
         cluster_id = connection.run_job_flow(**emr_conf)
         response = f"Cluster created with the step..{cluster_id['JobFlowId']}"
@@ -137,20 +147,25 @@ def check_s3_files(date_value, type, s3_key, schedule):
     """
     s3_client = boto3.client('s3')
     bucket = os.getenv('S3_BUCKET_RAW_DATA_1')
-    if 'daily' in schedule and ('popshelf' in type or 'popshelf' in s3_key):
+
+    if schedule == 'daily' and (type == 'popshelf' or 'popshelf' in s3_key):
         remote_1010_path = 'dollargeneral-popshelf/1010/Daily'
-    if 'weekly' in schedule and ('dg' in type or 'dg' in s3_key):
-        remote_1010_path = 'dollargeneral/1010/Weekly'
-    if 'weekly' in schedule and ('popshelf' in type or 'popshelf' in s3_key):
-        remote_1010_path = 'dollargeneral-popshelf/1010/Weekly'
-    if 'daily' in schedule and ('dg' in type or 'dg' in s3_key):
+    elif schedule == 'daily' and (type == 'dg' or 'dg' in s3_key):
         remote_1010_path = 'dollargeneral/1010/Daily'
+    elif schedule == 'weekly' and (type == 'popshelf' or 'popshelf' in s3_key):
+        remote_1010_path = 'dollargeneral-popshelf/1010/Weekly'
+    elif schedule == 'weekly' and (type == 'dg' or 'dg' in s3_key):
+        remote_1010_path = 'dollargeneral/1010/Weekly'
+    else:
+        logger.error(f'Invalid schedule: {schedule} or type {type} or s3_key {s3_key}')
+        raise Exception(f'Invalid schedule: {schedule} or type {type} or s3_key {s3_key}')
+
     paginator = s3_client.get_paginator('list_objects')
 
     # All 1010 files that need to be checked
-    list_files = ['transactions',  'tenders', 'transaction_item',
+    list_files = ['transactions', 'tenders', 'transaction_item',
                   'trans_disc_xref']
-     # 'product', 'product_category','organization', 'discounts'
+    # 'product', 'product_category','organization', 'discounts'
     try:
         for folder in list_files:
             for result in paginator.paginate(Bucket=bucket,
@@ -177,12 +192,13 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type, s3_key, 
     """
 
     # check if S3 1010 files are present for the datevalue
+    #TODO understand this
     if checks3flag == True:
         if not check_s3_files(date_value, type, s3_key, schedule):
             sys.exit(0)
 
     # starting pgp_decrypt batch job
-    batch = boto3.client('batch',  region_name='us-west-2')
+    batch = boto3.client('batch', region_name='us-west-2')
     command = f'--module batch_pgp_decrypt --date {date_value} --env {env_batch} --type {type} --schedule {schedule}'
     logging.info(command)
     command = command.split()
