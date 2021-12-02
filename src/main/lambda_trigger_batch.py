@@ -121,13 +121,11 @@ def trigger_emr_process_gold(env_emr, type, schedule_name):
     logger.info(f"{env_emr} - Starting {type} Transformer pipeline")
 
     try:
-        jobName = f'{_jobName}-popshelf' if 'popshelf' in type else _jobName
-
-        if is_another_emr_job_running(f'{jobName}-emr-cluster'):
-            return "Terminating because another emr job is running"
-
         with open(f'/var/task/config/emr/{env_emr}/{env_emr}-{type}-{schedule_name}-emr.yml', 'r') as yml_file:
             emr_conf = yaml.safe_load(yml_file)
+        jobName = emr_conf.get('Name', '')
+        if is_another_emr_job_running(jobName):
+            return "Terminating because another emr job is running"
         cluster_id = connection.run_job_flow(**emr_conf)
         response = f"Cluster created with the step..{cluster_id['JobFlowId']}"
 
@@ -206,7 +204,7 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type, schedule
     try:
         jobName = f'{_jobName}-{schedule}-popshelf' if 'popshelf' in type else f'{_jobName}-{schedule}'
 
-        if is_another_batch_job_running(jobName) and is_another_emr_job_running(f'{jobName}-emr-cluster'):
+        if is_another_batch_job_running(jobName) or is_another_emr_job_running(f'{jobName}-emr-cluster'):
             return "Terminating because another batch or emr job is running"
 
         submit_job_response = batch.submit_job(

@@ -3,11 +3,11 @@
 
 bucket: dev-cdp-data-lake
 s3a_bucket: s3a://dev-cdp-data-lake
-s3_staging_path: dollargeneral/transformed/test/staging
-s3_staging_path_1010: dollargeneral/transformed/test/weekly/staging/1010
-s3_tmp_path: dollargeneral/transformed/test/weekly/temp
-s3_gold_path: dollargeneral/transformed/test/weekly/gold
-s3_archive_path: dollargeneral/transformed/test/weekly/archive
+s3_staging_path: dollargeneral/transformed/staging
+s3_staging_path_1010: dollargeneral/weekly_transformed/staging/1010
+s3_tmp_path: dollargeneral/weekly_transformed/temp
+s3_gold_path: dollargeneral/weekly_transformed/gold
+s3_archive_path: dollargeneral/weekly_transformed/archive
 remote_1010_path: dollargeneral/1010/Weekly
 remote_Aurus_path: dollargeneral/Aurus/Daily
 local_Path: Documents/DG
