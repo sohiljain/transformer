@@ -90,7 +90,7 @@ Steps:
         - --root-dir
         - s3://bridg-binary-registry/bridg-dollargeneral-transformer
         - --type
-        - popshelf
+        - dg
 VisibleToAllUsers: True
 JobFlowRole: "EMR_EC2_DefaultRole"
 ServiceRole: "EMR_DefaultRole"
