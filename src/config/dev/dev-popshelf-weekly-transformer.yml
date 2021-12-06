@@ -9,6 +9,8 @@ s3_tmp_path: dollargeneral-popshelf/weekly_transformed/temp
 s3_gold_path: dollargeneral-popshelf/weekly_transformed/gold
 s3_archive_path: dollargeneral-popshelf/weekly_transformed/archive
 remote_1010_path: dollargeneral-popshelf/1010/Weekly
+s3_staging_path_weekly_1010: dollargeneral-popshelf/weekly_transformed/staging/1010
+s3_archive_path_weekly: dollargeneral-popshelf/weekly_transformed/archive
 remote_Aurus_path: dollargeneral/Aurus/Daily
 local_Path: Documents/DG
 secret: /dev-cdp/SecretManager/dollargeneral-transformer/

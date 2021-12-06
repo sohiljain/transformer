@@ -17,7 +17,7 @@ s3_resource = boto3.resource('s3')
 s3_client = boto3.client('s3')
 
 
-def process_1010(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y%m%d')):
+def process_1010(dg_config, root_dir, schedule, date_value=dt.datetime.now().strftime('%Y%m%d')):
     """
     Downloads recursively the given S3 path to the target directory.
     Download & Upload 1010 files from bridg-client-ftp to s3 transformed staging/archive directory
@@ -31,6 +31,8 @@ def process_1010(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y%
 
     list_files = ['transactions', 'product', 'product_category', 'organization', 'tenders', 'transaction_item',
                   'trans_disc_xref', 'discounts']
+
+    list_files_weekly = ['product', 'product_category', 'organization']
 
     for folder in list_files:
         prefix = f'{dg_config.remote_1010_path}/{folder.title()}/bridg_{folder}_{date_value}'
@@ -71,6 +73,18 @@ def process_1010(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y%
                             # Copying file from staging to archive directory to have a backup
                             copy_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
                                                dg_config.bucket, dg_config.s3_archive_path)
+
+                            #Copy the product, org files to weekly path
+                            if {folder} in list_files_weekly and schedule == 'daily':
+                                s3_upload_weekly_file_path = f'''{dg_config.s3_staging_path_weekly_1010}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
+                                copy_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
+                                               dg_config.bucket, s3_upload_weekly_file_path)
+
+                                s3_upload_weekly_archive_file_path = f'''{dg_config.s3_archive_path_weekly}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
+                                copy_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
+                                               dg_config.bucket, s3_upload_weekly_archive_file_path)
+
+
 
                     except Exception as e:
                         raise Exception(f"Error in PGP-Decrypt 1010\n {e}")
@@ -164,7 +178,7 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
                 logger.info(f'Starting process for date - {args_dt}')
                 if (date_arg > dg_config.aurus_start_date):
                     process_aurus(dg_config, root_dir, date_arg)
-                process_1010(dg_config, root_dir, date_arg)
+                process_1010(dg_config, root_dir, schedule, date_arg)
 
         # pattern-2
         elif ':' in args_dt:
@@ -176,7 +190,7 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
                 date_arg = (str(start_date)).split(' ')[0].replace('-', '')
                 if (date_arg > dg_config.aurus_start_date):
                     process_aurus(dg_config, root_dir, date_arg)
-                process_1010(dg_config, root_dir, date_arg)
+                process_1010(dg_config, root_dir, schedule, date_arg)
                 start_date += dt.timedelta(days=1)
 
         # pattern-3
@@ -184,7 +198,7 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
             logger.info(f'Starting process for date - {args_dt}')
             if (args_dt > dg_config.aurus_start_date):
                 process_aurus(dg_config, root_dir, args_dt)
-            process_1010(dg_config, root_dir, args_dt)
+            process_1010(dg_config, root_dir, schedule, args_dt)
 
         msg = {"Action": "Start EMR Process Gold", "EnvDetail": env, "Type" : type, "Schedule": schedule}
         json_msg = json.dumps(msg)
