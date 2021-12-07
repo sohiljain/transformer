@@ -76,16 +76,19 @@ def lambda_handler(event, context):
                     s3_key = internal_record['s3']['object']['key']
                     logger.info(f's3_key: {s3_key}')
 
+                    # Setting type to dg or popshelf
                     if 'popshelf' in s3_key:
                         type = 'popshelf'
                     else:
                         type = 'dg'
 
+                    # Setting condition to exit if SNS triggered lambda for irrelevant s3 keys
                     if not (s3_key.startswith('dollargeneral/1010/Daily/') or s3_key.startswith(
                             'dollargeneral-popshelf/1010/Daily') or s3_key.startswith('dollargeneral/1010/Weekly/')
                             or s3_key.startswith('dollargeneral-popshelf/1010/Weekly/')):
                         raise Exception
 
+                    # Setting schedule to weekly or daily by checking s3 key
                     if 'Weekly' in s3_key:
                         schedule = 'weekly'
                     elif 'Daily' in s3_key:
@@ -93,7 +96,7 @@ def lambda_handler(event, context):
                     else:
                         raise Exception(f'schedule not found in s3_key {s3_key}')
 
-                    file_name = s3_key.split('/')[4]
+                    file_name = s3_key.rsplit('_')[-1]
                     date_value = file_name.rsplit('_')[-1][:8]
                     logger.info(f'Processing {file_name} for {date_value}')
 
@@ -161,9 +164,8 @@ def check_s3_files(date_value, type, s3_key, schedule):
     paginator = s3_client.get_paginator('list_objects')
 
     # All 1010 files that need to be checked
-    list_files = ['transactions', 'tenders', 'transaction_item',
-                  'trans_disc_xref']
-    # 'product', 'product_category','organization', 'discounts'
+    list_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'product', 'product_category',
+                  'organization', 'discounts']
     try:
         for folder in list_files:
             for result in paginator.paginate(Bucket=bucket,
@@ -204,7 +206,7 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type, schedule
     try:
         jobName = f'{_jobName}-{schedule}-popshelf' if 'popshelf' in type else f'{_jobName}-{schedule}'
         if 'backfill' in env_batch:
-            jobName = f'backfill-{jobName}-{schedule}'
+            jobName = f'backfill-{jobName}'
 
         if is_another_batch_job_running(jobName) or is_another_emr_job_running(f'{jobName}-emr-cluster'):
             return "Terminating because another batch or emr job is running"
