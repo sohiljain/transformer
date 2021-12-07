@@ -164,8 +164,12 @@ def check_s3_files(date_value, type, s3_key, schedule):
     paginator = s3_client.get_paginator('list_objects')
 
     # All 1010 files that need to be checked
-    list_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'product', 'product_category',
+    if schedule == 'daily':
+        list_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'product', 'product_category',
                   'organization', 'discounts']
+    else:
+        list_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'discounts']
+
     try:
         for folder in list_files:
             for result in paginator.paginate(Bucket=bucket,
