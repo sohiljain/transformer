@@ -203,6 +203,8 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type, schedule
 
     try:
         jobName = f'{_jobName}-{schedule}-popshelf' if 'popshelf' in type else f'{_jobName}-{schedule}'
+        if 'backfill' in env_batch:
+            jobName = f'backfill-{jobName}-{schedule}'
 
         if is_another_batch_job_running(jobName) or is_another_emr_job_running(f'{jobName}-emr-cluster'):
             return "Terminating because another batch or emr job is running"

@@ -45,8 +45,8 @@ Instances:
 #    - Name: Slave nodes
 #      Market: ON_DEMAND
 #      InstanceRole: TASK
-#      InstanceType: r5.2xlarge
-#      InstanceCount: 4
+#      InstanceType: r5.xlarge
+#      InstanceCount: 1
 #      EbsConfiguration:
 #        EbsBlockDeviceConfigs:
 #        - VolumeSpecification:
@@ -57,7 +57,7 @@ Instances:
     Ec2KeyName: towerbridg
     KeepJobFlowAliveWhenNoSteps: False
     TerminationProtected: False
-    Ec2SubnetId: subnet-01d153dc6df563b60 #subnet-080ca4bae7f28e8a9
+    Ec2SubnetId: subnet-01d153dc6df563b60
 Steps:
     - Name: transformer-step-1
       ActionOnFailure: TERMINATE_CLUSTER
