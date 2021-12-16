@@ -114,6 +114,26 @@ def copy_staging_files(s3_path, folder, filename, bucket, s3_archive_path):
         raise Exception(f"Error in copy staging file {e}")
     logger.info((f"Done copy staging file to {s3_archive_path}/{folder}/{filename}"))
 
+def copy_weekly_staging_files(s3_path, folder, filename, bucket, s3_weekly_path, partition_col):
+    """
+    Copy object A as object B
+    :param s3_path: file to be copied from s3 path
+    :param folder: folder name
+    :param filename: file to be copied
+    :param bucket: s3 bucket
+    :param s3_archive_path: archive path for backup
+    :return: appropriate success/failure message
+    """
+
+    logger.info((f"Copy staging file to weekly staging path"))
+    try:
+        s3_resource.Object(bucket, f'{s3_weekly_path}/{folder}/dt={partition_col}/{filename}').copy_from(
+            CopySource=f'{bucket}/{s3_path}')
+    except Exception as e:
+        logger.error(f'{e} Error in copy staging file')
+        raise Exception(f"Error in copy staging file {e}")
+    logger.info((f"Done copy staging file to {s3_weekly_path}/{folder}/dt={partition_col}/{filename}"))
+
 
 def assert_file_exists(path, filename):
     """
