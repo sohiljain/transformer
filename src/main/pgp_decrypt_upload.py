@@ -76,13 +76,13 @@ def process_1010(dg_config, root_dir, schedule, date_value=dt.datetime.now().str
 
                             #Copy the product, org files to weekly path
                             if folder in list_files_weekly and schedule == 'daily':
-                                s3_upload_weekly_file_path = f'''{dg_config.s3_staging_path_weekly_1010}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
+                                # s3_upload_weekly_file_path = f'''{dg_config.s3_staging_path_weekly_1010}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
                                 copy_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
-                                               dg_config.bucket, s3_upload_weekly_file_path)
+                                               dg_config.bucket, dg_config.s3_staging_path_weekly_1010)
 
-                                s3_upload_weekly_archive_file_path = f'''{dg_config.s3_archive_path_weekly}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
+                                # s3_upload_weekly_archive_file_path = f'''{dg_config.s3_archive_path_weekly}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
                                 copy_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
-                                               dg_config.bucket, s3_upload_weekly_archive_file_path)
+                                               dg_config.bucket, dg_config.s3_archive_path_weekly)
 
 
 

@@ -95,9 +95,9 @@ def lambda_handler(event, context):
                         raise Exception
 
                     # Setting schedule to weekly or daily by checking s3 key
-                    if 'Weekly' in s3_key:
+                    if 'weekly' in s3_key.lower():
                         schedule = 'weekly'
-                    elif 'Daily' in s3_key:
+                    elif 'daily' in s3_key.lower():
                         schedule = 'daily'
                     else:
                         raise Exception(f'schedule not found in s3_key {s3_key}')
@@ -197,7 +197,7 @@ def check_s3_files(date_value, type, s3_key, schedule):
     remote_daily_s3_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'product', 'product_category',
               'organization', 'discounts']
 
-    remote_weekly_s3_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'discount']
+    remote_weekly_s3_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'discounts']
     staging_weekly_s3_files = ['product', 'product_category', 'organization']
 
     if schedule == 'daily':
