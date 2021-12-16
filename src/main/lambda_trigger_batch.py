@@ -29,6 +29,8 @@ def lambda_handler(event, context):
     :return: Success/Failure message
     """
 
+    logger.info("-------------starting tranformer----------------")
+
     try:
 
         # Check the sns event and trigger batch vs emr appropriately
@@ -83,9 +85,13 @@ def lambda_handler(event, context):
                         type = 'dg'
 
                     # Setting condition to exit if SNS triggered lambda for irrelevant s3 keys
-                    if not (s3_key.startswith('dollargeneral/1010/Daily/') or s3_key.startswith(
-                            'dollargeneral-popshelf/1010/Daily') or s3_key.startswith('dollargeneral/1010/Weekly/')
-                            or s3_key.startswith('dollargeneral-popshelf/1010/Weekly/')):
+                    if not (s3_key.startswith('dollargeneral/1010/Daily/')
+                            or s3_key.startswith('dollargeneral-popshelf/1010/Daily')
+                            or s3_key.startswith('dollargeneral/1010/Weekly/')
+                            or s3_key.startswith('dollargeneral-popshelf/1010/Weekly/')
+                            or s3_key.startswith('dollargeneral/weekly_transformed/staging/1010/')
+                            or s3_key.startswith('dollargeneral-popshelf/weekly_transformed/staging/1010/')
+                    ):
                         raise Exception
 
                     # Setting schedule to weekly or daily by checking s3 key
@@ -145,20 +151,23 @@ def return_s3_file_exist_flag(list_files, path, schedule, date_value):
         s3_client = boto3.client('s3')
         bucket = os.getenv('S3_BUCKET_RAW_DATA_1')
         paginator = s3_client.get_paginator('list_objects')
+
+        logger.info(f"Checking for {path} at schedule {schedule} for date {date_value} and list_files {list_files}")
         for folder in list_files:
-            prefix = f'{path}/{folder.title()}/bridg_{folder}_{date_value}' if schedule == 'daily' \
-                else f'{path}/{folder.title()}/dt={date_value[0:8]}/bridg_{folder}_{date_value}'
+            if schedule == 'weekly' and 'staging' in path:
+                prefix = f'{path}/{folder.lower()}/dt={date_value[0:8]}/bridg_{folder}_{date_value}'
+            else:
+                prefix = f'{path}/{folder.title()}/bridg_{folder}_{date_value}'
 
             for result in paginator.paginate(Bucket=bucket, Prefix=prefix):
                 for content in result['Contents']:
                     filename = content['Key'].split('/')[-1]
                     logger.info(filename)
-
         return_flag = True
 
     except Exception as e:
         return_flag = False
-        logger.error(f'{folder} not found')
+        logger.error(f'{prefix} not found')
 
     return return_flag
 
@@ -176,10 +185,10 @@ def check_s3_files(date_value, type, s3_key, schedule):
         path = 'dollargeneral/1010/Daily'
     elif schedule == 'weekly' and (type == 'popshelf' or 'popshelf' in s3_key):
         path = 'dollargeneral-popshelf/1010/Weekly'
-        staging_path = 'dollargeneral-popshelf/weekly_transformed/staging/1010/'
+        staging_path = 'dollargeneral-popshelf/weekly_transformed/staging/1010'
     elif schedule == 'weekly' and (type == 'dg' or 'dg' in s3_key):
         path = 'dollargeneral/1010/Weekly'
-        staging_path = 'dollargeneral/weekly_transformed/staging/1010/'
+        staging_path = 'dollargeneral/weekly_transformed/staging/1010'
     else:
         logger.error(f'Invalid schedule: {schedule} or type {type} or s3_key {s3_key}')
         raise Exception(f'Invalid schedule: {schedule} or type {type} or s3_key {s3_key}')
@@ -188,7 +197,7 @@ def check_s3_files(date_value, type, s3_key, schedule):
     remote_daily_s3_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'product', 'product_category',
               'organization', 'discounts']
 
-    remote_weekly_s3_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'discounts']
+    remote_weekly_s3_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'discount']
     staging_weekly_s3_files = ['product', 'product_category', 'organization']
 
     if schedule == 'daily':
