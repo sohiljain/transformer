@@ -4,7 +4,8 @@
 import boto3
 import os, logging, sys, json
 import datetime as dt
-from utils.utils import copy_staging_files, assert_file_exists, gpg_decrytion, send_sns_alert, s3_delete_file, copy_weekly_staging_files
+from utils.utils import copy_staging_files, assert_file_exists, gpg_decrytion, send_sns_alert, s3_delete_file, \
+    copy_weekly_staging_files
 from utils.config import DgConfig
 
 # create logger
@@ -29,8 +30,11 @@ def process_1010(dg_config, root_dir, schedule, date_value=dt.datetime.now().str
     gpg_1010 = gpg_decrytion('1010_decrypt_key.gpg', root_dir, dg_config.bucket, dg_config.gnupghome)
     paginator = s3_client.get_paginator('list_objects')
 
-    list_files = ['transactions', 'product', 'product_category', 'organization', 'tenders', 'transaction_item',
-                  'trans_disc_xref', 'discounts']
+    if schedule == 'daily':
+        list_files = ['transactions', 'product', 'product_category', 'organization', 'tenders', 'transaction_item',
+                      'trans_disc_xref', 'discounts']
+    else:
+        list_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'discounts']
 
     list_files_weekly = ['product', 'product_category', 'organization']
 
@@ -39,7 +43,7 @@ def process_1010(dg_config, root_dir, schedule, date_value=dt.datetime.now().str
         logger.info(f'Downloading from {prefix}')
 
         try:
-            for result in paginator.paginate(Bucket=dg_config.bucket,Prefix=prefix):
+            for result in paginator.paginate(Bucket=dg_config.bucket, Prefix=prefix):
                 # Download each file individually
                 for content in result['Contents']:
 
@@ -74,15 +78,18 @@ def process_1010(dg_config, root_dir, schedule, date_value=dt.datetime.now().str
                             copy_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
                                                dg_config.bucket, dg_config.s3_archive_path)
 
-                            #Copy the product, org files to weekly path
+                            # Copy the product, org files to weekly path
                             if folder in list_files_weekly and schedule == 'daily':
                                 # s3_upload_weekly_file_path = f'''{dg_config.s3_staging_path_weekly_1010}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
-                                copy_weekly_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
-                                               dg_config.bucket, dg_config.s3_staging_path_weekly_1010, partition_col)
+                                copy_weekly_staging_files(s3_upload_file_path, folder,
+                                                          filename.replace('psv.gz.pgp', 'psv.gz'),
+                                                          dg_config.bucket, dg_config.s3_staging_path_weekly_1010,
+                                                          partition_col)
 
                                 # s3_upload_weekly_archive_file_path = f'''{dg_config.s3_archive_path_weekly}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
-                                copy_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
-                                               dg_config.bucket, dg_config.s3_archive_path_weekly)
+                                copy_staging_files(s3_upload_file_path, folder,
+                                                   filename.replace('psv.gz.pgp', 'psv.gz'),
+                                                   dg_config.bucket, dg_config.s3_archive_path_weekly)
 
 
 
@@ -200,7 +207,7 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
                 process_aurus(dg_config, root_dir, args_dt)
             process_1010(dg_config, root_dir, schedule, args_dt)
 
-        msg = {"Action": "Start EMR Process Gold", "EnvDetail": env, "Type" : type, "Schedule": schedule}
+        msg = {"Action": "Start EMR Process Gold", "EnvDetail": env, "Type": type, "Schedule": schedule}
         json_msg = json.dumps(msg)
         logger.info(f"Sending message - {json_msg} to SNS")
 
@@ -211,7 +218,7 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
     except Exception as e:
         # send_sns_alert(f"{type} Transformer: PGP Decrypt failed", e)
         logger.error(f"{type} Transformer: PGP Decrypt failed {e}", exc_info=True)
-        #TODO delete weekly staging
+        # TODO delete weekly staging
         s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
         logger.info(f"Cleaned up staging file path {dg_config.s3_staging_path_1010}")
         raise Exception(f"{type} Transformer: PGP Decrypt failed {e}")
