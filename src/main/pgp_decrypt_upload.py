@@ -211,6 +211,7 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
     except Exception as e:
         # send_sns_alert(f"{type} Transformer: PGP Decrypt failed", e)
         logger.error(f"{type} Transformer: PGP Decrypt failed {e}", exc_info=True)
+        #TODO delete weekly staging
         s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
         logger.info(f"Cleaned up staging file path {dg_config.s3_staging_path_1010}")
         raise Exception(f"{type} Transformer: PGP Decrypt failed {e}")

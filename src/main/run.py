@@ -67,6 +67,6 @@ if __name__ == "__main__":
         pgp_decrypt(dg_config, args_dt, root_dir, args.env, args.type, args.schedule)
     elif args.module == "emr_process_gold":
         from main.emr_process_gold import process_gold
-        process_gold(spark, dg_config, args.type)
+        process_gold(spark, dg_config, args.type, args.schedule)
     else:
         raise ValueError(f'Invalid or no module value passed: {args.module}')

@@ -140,40 +140,16 @@ def trigger_emr_process_gold(env_emr, type, schedule_name):
     return response
 
 
-def check_s3_files(date_value, type, s3_key, schedule):
-    """
-    Return True if S3 1010 files are present for the date_value else False
-    :param date_value: date for which files to be processed
-    :return: Return True if S3 1010 files are present for the date_value else False
-    """
-    s3_client = boto3.client('s3')
-    bucket = os.getenv('S3_BUCKET_RAW_DATA_1')
-
-    if schedule == 'daily' and (type == 'popshelf' or 'popshelf' in s3_key):
-        remote_1010_path = 'dollargeneral-popshelf/1010/Daily'
-    elif schedule == 'daily' and (type == 'dg' or 'dg' in s3_key):
-        remote_1010_path = 'dollargeneral/1010/Daily'
-    elif schedule == 'weekly' and (type == 'popshelf' or 'popshelf' in s3_key):
-        remote_1010_path = 'dollargeneral-popshelf/1010/Weekly'
-    elif schedule == 'weekly' and (type == 'dg' or 'dg' in s3_key):
-        remote_1010_path = 'dollargeneral/1010/Weekly'
-    else:
-        logger.error(f'Invalid schedule: {schedule} or type {type} or s3_key {s3_key}')
-        raise Exception(f'Invalid schedule: {schedule} or type {type} or s3_key {s3_key}')
-
-    paginator = s3_client.get_paginator('list_objects')
-
-    # All 1010 files that need to be checked
-    if schedule == 'daily':
-        list_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'product', 'product_category',
-                  'organization', 'discounts']
-    else:
-        list_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'discounts']
-
+def return_s3_file_exist_flag(list_files, path, schedule, date_value):
     try:
+        s3_client = boto3.client('s3')
+        bucket = os.getenv('S3_BUCKET_RAW_DATA_1')
+        paginator = s3_client.get_paginator('list_objects')
         for folder in list_files:
-            for result in paginator.paginate(Bucket=bucket,
-                                             Prefix=f'{remote_1010_path}/{folder.title()}/bridg_{folder}_{date_value}'):
+            prefix = f'{path}/{folder.title()}/bridg_{folder}_{date_value}' if schedule == 'daily' \
+                else f'{path}/{folder.title()}/dt={date_value[0:8]}/bridg_{folder}_{date_value}'
+
+            for result in paginator.paginate(Bucket=bucket, Prefix=prefix):
                 for content in result['Contents']:
                     filename = content['Key'].split('/')[-1]
                     logger.info(filename)
@@ -187,6 +163,44 @@ def check_s3_files(date_value, type, s3_key, schedule):
     return return_flag
 
 
+def check_s3_files(date_value, type, s3_key, schedule):
+    """
+    Return True if S3 1010 files are present for the date_value else False
+    :param date_value: date for which files to be processed
+    :return: Return True if S3 1010 files are present for the date_value else False
+    """
+
+    if schedule == 'daily' and (type == 'popshelf' or 'popshelf' in s3_key):
+        path = 'dollargeneral-popshelf/1010/Daily'
+    elif schedule == 'daily' and (type == 'dg' or 'dg' in s3_key):
+        path = 'dollargeneral/1010/Daily'
+    elif schedule == 'weekly' and (type == 'popshelf' or 'popshelf' in s3_key):
+        path = 'dollargeneral-popshelf/1010/Weekly'
+        staging_path = 'dollargeneral-popshelf/weekly_transformed/staging/1010/'
+    elif schedule == 'weekly' and (type == 'dg' or 'dg' in s3_key):
+        path = 'dollargeneral/1010/Weekly'
+        staging_path = 'dollargeneral/weekly_transformed/staging/1010/'
+    else:
+        logger.error(f'Invalid schedule: {schedule} or type {type} or s3_key {s3_key}')
+        raise Exception(f'Invalid schedule: {schedule} or type {type} or s3_key {s3_key}')
+
+    # All 1010 files that need to be checked
+    remote_daily_s3_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'product', 'product_category',
+              'organization', 'discounts']
+
+    remote_weekly_s3_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'discounts']
+    staging_weekly_s3_files = ['product', 'product_category', 'organization']
+
+    if schedule == 'daily':
+        return return_s3_file_exist_flag(remote_daily_s3_files, path, schedule, date_value)
+    elif schedule == 'weekly':
+        return return_s3_file_exist_flag(remote_weekly_s3_files, path, schedule, date_value) and \
+        return_s3_file_exist_flag(staging_weekly_s3_files, staging_path, schedule, date_value)
+    else:
+        pass
+
+
+
 def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type, schedule, s3_key):
     """
     Code to start pgp_decrypt batch job
@@ -196,8 +210,7 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type, schedule
     """
 
     # check if S3 1010 files are present for the datevalue
-    #TODO understand this
-    if checks3flag == True:
+    if checks3flag:
         if not check_s3_files(date_value, type, s3_key, schedule):
             sys.exit(0)
 
