@@ -33,8 +33,10 @@ def process_1010(dg_config, root_dir, schedule, date_value=dt.datetime.now().str
     if schedule == 'daily':
         list_files = ['transactions', 'product', 'product_category', 'organization', 'tenders', 'transaction_item',
                       'trans_disc_xref', 'discounts']
-    else:
+    elif schedule == 'weekly':
         list_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'discounts']
+    else:
+        list_files = []
 
     list_files_weekly = ['product', 'product_category', 'organization']
 
