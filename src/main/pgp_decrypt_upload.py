@@ -38,6 +38,8 @@ def process_1010(dg_config, root_dir, schedule, date_value=dt.datetime.now().str
     else:
         list_files = []
 
+    logging.info(f'List Files:{list_files}')
+
     list_files_weekly = ['product', 'product_category', 'organization']
 
     for folder in list_files:
