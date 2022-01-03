@@ -7,6 +7,7 @@ import boto3
 from pyspark.sql.functions import *
 from utils.utils import get_matching_s3_keys, s3_delete_file, count_check, send_sns_alert
 from utils.config import DgConfig
+from datetime import datetime, timedelta
 
 s3_resource = boto3.resource('s3')
 s3_client = boto3.client('s3')
@@ -102,7 +103,7 @@ def format_gold_file(table, spark, dg_config, type, schedule):
                 }
 
                 dt = key.split('/')[-2].split('=')[1]
-                current_date = dt.datetime.now().strftime('%Y%m%d') + dt.timedelta(days=1)
+                current_date = (datetime.now() + timedelta(days=1)).strftime('%Y%m%d')
 
                 #TODO s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}_{key}.psv.gz' - To make mulitple part files and remove repartition - Sid
                 # https://bridg-client-ftp.s3.amazonaws.com/dollargeneral-popshelf/transformed/test/temp/transactions/partition_col=20210601/part-00000-6e5c766d-17a3-47f4-9366-3606c6bf4e26.c000.csv.gz
