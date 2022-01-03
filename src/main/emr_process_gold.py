@@ -102,12 +102,13 @@ def format_gold_file(table, spark, dg_config, type, schedule):
                 }
 
                 dt = key.split('/')[-2].split('=')[1]
+                current_date = dt.datetime.now().strftime('%Y%m%d') + dt.timedelta(days=1)
 
                 #TODO s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}_{key}.psv.gz' - To make mulitple part files and remove repartition - Sid
                 # https://bridg-client-ftp.s3.amazonaws.com/dollargeneral-popshelf/transformed/test/temp/transactions/partition_col=20210601/part-00000-6e5c766d-17a3-47f4-9366-3606c6bf4e26.c000.csv.gz
                 s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}.psv.gz'
                 if schedule == "weekly":
-                    s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}_{schedule}.psv.gz'
+                    s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{current_date}_{dt}_{schedule}.psv.gz'
                 if 'transaction_item' in s3_gold_temp:
                     s3_gold_temp = s3_gold_temp.replace('transaction_', 'line_')
                 logger.info(f'Moving files to {s3_gold_temp} ')
