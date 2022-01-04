@@ -21,19 +21,19 @@ Instances:
     - Name: Master nodes
       Market: ON_DEMAND
       InstanceRole: MASTER
-      InstanceType: m4.large
+      InstanceType: m4.4xlarge
       InstanceCount: 1
       EbsConfiguration:
         EbsBlockDeviceConfigs:
         - VolumeSpecification:
             VolumeType: gp2
-            SizeInGB: 20
+            SizeInGB: 100
           VolumesPerInstance: 1
         EbsOptimized: True
     - Name: Slave nodes
       Market: ON_DEMAND
       InstanceRole: CORE
-      InstanceType: r5.xlarge
+      InstanceType: r5.2xlarge
       InstanceCount: 1
       EbsConfiguration:
         EbsBlockDeviceConfigs:
