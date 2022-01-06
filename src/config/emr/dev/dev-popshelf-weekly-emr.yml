@@ -31,7 +31,7 @@ Instances:
           VolumesPerInstance: 1
         EbsOptimized: True
     - Name: Slave nodes
-      Market: SPOT
+      Market: ON_DEMAND
       InstanceRole: CORE
       InstanceType: r5.xlarge
       InstanceCount: 1
