@@ -3,7 +3,7 @@
 
 Name: cdp-dg-transformer-daily-emr-cluster
 LogUri: "s3://cdp-logs-bucket/dollargeneral/"
-ReleaseLabel: "emr-5.27.0"
+ReleaseLabel: "emr-6.4.0"
 Applications:
     - Name: "Spark"
 Configurations:
@@ -45,7 +45,7 @@ Instances:
 #    - Name: Slave nodes
 #      Market: SPOT
 #      InstanceRole: TASK
-#      InstanceType: r5.xlarge
+#      InstanceType: r6g.xlarge
 #      InstanceCount: 1
 #      EbsConfiguration:
 #        EbsBlockDeviceConfigs:
@@ -68,7 +68,7 @@ Steps:
         Jar: command-runner.jar
         Args:
         - sudo
-        - pip-3.6
+        - pip3
         - install
         - boto3
     - Name: transformer-step-2

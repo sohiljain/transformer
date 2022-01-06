@@ -21,7 +21,7 @@ Instances:
     - Name: Master nodes
       Market: ON_DEMAND
       InstanceRole: MASTER
-      InstanceType: m6.large
+      InstanceType: m6g.xlarge
       InstanceCount: 1
       EbsConfiguration:
         EbsBlockDeviceConfigs:
@@ -33,7 +33,7 @@ Instances:
     - Name: Slave nodes
       Market: SPOT
       InstanceRole: CORE
-      InstanceType: r6.xlarge
+      InstanceType: r6g.xlarge
       InstanceCount: 1
       EbsConfiguration:
         EbsBlockDeviceConfigs:
@@ -56,7 +56,7 @@ Steps:
         Jar: command-runner.jar
         Args:
         - sudo
-        - pip-3.6
+        - pip3
         - install
         - boto3
     - Name: transformer-step-2
