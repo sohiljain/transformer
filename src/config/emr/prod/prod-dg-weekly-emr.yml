@@ -33,7 +33,7 @@ Instances:
     - Name: Slave nodes
       Market: SPOT
       InstanceRole: CORE
-      InstanceType: r6g.xlarge
+      InstanceType: r5.xlarge
       InstanceCount: 1
       EbsConfiguration:
         EbsBlockDeviceConfigs:

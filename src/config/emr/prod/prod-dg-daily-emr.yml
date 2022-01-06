@@ -45,7 +45,7 @@ Instances:
 #    - Name: Slave nodes
 #      Market: SPOT
 #      InstanceRole: TASK
-#      InstanceType: r6g.xlarge
+#      InstanceType: r5.xlarge
 #      InstanceCount: 1
 #      EbsConfiguration:
 #        EbsBlockDeviceConfigs:
