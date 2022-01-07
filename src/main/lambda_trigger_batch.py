@@ -84,13 +84,18 @@ def lambda_handler(event, context):
                     else:
                         type = 'dg'
 
+                    # Dimension files
+                    dim_files = ['product', 'product_category', 'organization']
+
                     # Setting condition to exit if SNS triggered lambda for irrelevant s3 keys
                     if not (s3_key.startswith('dollargeneral/1010/Daily/')
                             or s3_key.startswith('dollargeneral-popshelf/1010/Daily')
                             or s3_key.startswith('dollargeneral/1010/Weekly/')
                             or s3_key.startswith('dollargeneral-popshelf/1010/Weekly/')
-                            or s3_key.startswith('dollargeneral/weekly_transformed/staging/1010/')
-                            or s3_key.startswith('dollargeneral-popshelf/weekly_transformed/staging/1010/')
+                            or (s3_key.startswith('dollargeneral/weekly_transformed/staging/1010/')
+                                and any(file in s3_key for file in dim_files))
+                            or (s3_key.startswith('dollargeneral-popshelf/weekly_transformed/staging/1010/')
+                                and any(file in s3_key for file in dim_files))
                     ):
                         raise Exception
 

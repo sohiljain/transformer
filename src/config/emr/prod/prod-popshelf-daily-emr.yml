@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Bridg Inc. All rights reserved.
 # @author Sohil Jain <sohil.jain@bridg.com>
 
-Name: cdp-dg-transformer-popshelf-daily-emr-cluster
+Name: cdp-dg-transformer-daily-popshelf-emr-cluster
 LogUri: "s3://cdp-logs-bucket/dollargeneral/"
 ReleaseLabel: "emr-6.4.0"
 Applications:
