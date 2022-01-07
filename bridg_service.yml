@@ -18,13 +18,13 @@ production:
 development:
   type: batch
   command:
-  environmentName: dev-cdp
+  environmentName: cdp
   cpu: 2
   memory: 3192
-  taskRole: /dev-cdp/Services/data-lake-etl/taskRole
+  taskRole: /cdp/Services/dg-transformer/taskRole
   environmentalVariables:
   - Name: ALERT_SNS_PARAM
     Value: /dev-cdp/SNS/Alarm
   - Name: EMR_SNS_PARAM
-    Value: "arn:aws:sns:us-west-2:020970917333:dg-transformer-lambda-sns-development"
+    Value: "arn:aws:sns:us-west-2:596832493770:dg-transformer-lambda-sns-development"
 

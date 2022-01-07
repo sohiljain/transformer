@@ -114,26 +114,6 @@ def copy_staging_files(s3_path, folder, filename, bucket, s3_archive_path):
         raise Exception(f"Error in copy staging file {e}")
     logger.info((f"Done copy staging file to {s3_archive_path}/{folder}/{filename}"))
 
-def copy_weekly_staging_files(s3_path, folder, filename, bucket, s3_weekly_path, partition_col):
-    """
-    Copy object A as object B
-    :param s3_path: file to be copied from s3 path
-    :param folder: folder name
-    :param filename: file to be copied
-    :param bucket: s3 bucket
-    :param s3_archive_path: archive path for backup
-    :return: appropriate success/failure message
-    """
-
-    logger.info((f"Copy staging file to weekly staging path"))
-    try:
-        s3_resource.Object(bucket, f'{s3_weekly_path}/{folder}/dt={partition_col}/{filename}').copy_from(
-            CopySource=f'{bucket}/{s3_path}')
-    except Exception as e:
-        logger.error(f'{e} Error in copy staging file')
-        raise Exception(f"Error in copy staging file {e}")
-    logger.info((f"Done copy staging file to {s3_weekly_path}/{folder}/dt={partition_col}/{filename}"))
-
 
 def assert_file_exists(path, filename):
     """
@@ -218,7 +198,6 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table, typ
             else:
                 # For tenders, we only send sns alerts otherwise Historical fails because historical doesn't match exact
                 send_sns_alert(f" {type} Transformer: {table} Customer Name low matches or count mismatch", sns_msg)
-                logger.info(f"Customer Name low matches or count mismatch {sns_msg}")
 
         # Count check between staging and temp table
         else:
@@ -268,7 +247,11 @@ def send_sns_alert(subject, message):
 
         # sending sns message for alerting on slack and email
         sns_client = boto3.client('sns', region_name='us-west-2')
-        sns_client.publish(TopicArn=sns_topic_arn, Subject=subject, Message=str(message))
+        sns_client.publish(
+            TopicArn=sns_topic_arn,
+            Subject=subject,
+            Message=str(message)
+        )
     except Exception as e:
         logger.error(f"Failed to publish SNS message {e}", exc_info=True)
         raise Exception(f"Failed to publish SNS message {e}")

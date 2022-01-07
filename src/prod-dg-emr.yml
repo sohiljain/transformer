@@ -1,9 +1,9 @@
-# Copyright (c) 2021 Bridg Inc. All rights reserved.
+# Copyright (c) 2020 Bridg Inc. All rights reserved.
 # @author Sohil Jain <sohil.jain@bridg.com>
 
-Name: backfill-cdp-dg-transformer-popshelf-daily-emr-cluster
+Name: cdp-dg-transformer-emr-cluster
 LogUri: "s3://cdp-logs-bucket/dollargeneral/"
-ReleaseLabel: "emr-6.4.0"
+ReleaseLabel: "emr-5.27.0"
 Applications:
     - Name: "Spark"
 Configurations:
@@ -21,19 +21,7 @@ Instances:
     - Name: Master nodes
       Market: ON_DEMAND
       InstanceRole: MASTER
-      InstanceType: m6g.xlarge
-      InstanceCount: 1
-      EbsConfiguration:
-        EbsBlockDeviceConfigs:
-        - VolumeSpecification:
-            VolumeType: gp2
-            SizeInGB: 20
-          VolumesPerInstance: 1
-        EbsOptimized: True
-    - Name: Slave nodes
-      Market: ON_DEMAND
-      InstanceRole: CORE
-      InstanceType: r5.xlarge
+      InstanceType: m4.4xlarge
       InstanceCount: 1
       EbsConfiguration:
         EbsBlockDeviceConfigs:
@@ -42,6 +30,30 @@ Instances:
             SizeInGB: 100
           VolumesPerInstance: 1
         EbsOptimized: True
+    - Name: Slave nodes
+      Market: ON_DEMAND
+      InstanceRole: CORE
+      InstanceType: r5.2xlarge
+      InstanceCount: 1
+      EbsConfiguration:
+        EbsBlockDeviceConfigs:
+        - VolumeSpecification:
+            VolumeType: gp2
+            SizeInGB: 100
+          VolumesPerInstance: 1
+        EbsOptimized: True
+#    - Name: Slave nodes
+#      Market: ON_DEMAND
+#      InstanceRole: TASK
+#      InstanceType: r5.xlarge
+#      InstanceCount: 1
+#      EbsConfiguration:
+#        EbsBlockDeviceConfigs:
+#        - VolumeSpecification:
+#            VolumeType: gp2
+#            SizeInGB: 100
+#          VolumesPerInstance: 1
+#        EbsOptimized: True
     Ec2KeyName: cdp-admin
     KeepJobFlowAliveWhenNoSteps: False
     TerminationProtected: False
@@ -56,7 +68,7 @@ Steps:
         Jar: command-runner.jar
         Args:
         - sudo
-        - pip3
+        - pip-3.6
         - install
         - boto3
     - Name: transformer-step-2
@@ -74,13 +86,11 @@ Steps:
         - --module
         - emr_process_gold
         - --env
-        - backfill
+        - prod
         - --root-dir
         - s3://bridg-binary-registry/bridg-dollargeneral-transformer
         - --type
-        - popshelf
-        - --schedule
-        - daily
+        - dg
 VisibleToAllUsers: True
 JobFlowRole: "EMR_EC2_DefaultRole"
 ServiceRole: "EMR_DefaultRole"
