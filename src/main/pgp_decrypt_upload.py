@@ -4,8 +4,7 @@
 import boto3
 import os, logging, sys, json
 import datetime as dt
-from utils.utils import copy_staging_files, assert_file_exists, gpg_decrytion, send_sns_alert, s3_delete_file, \
-    copy_weekly_staging_files
+from utils.utils import copy_staging_files, assert_file_exists, gpg_decrytion, send_sns_alert, s3_delete_file
 from utils.config import DgConfig
 
 # create logger
@@ -18,7 +17,7 @@ s3_resource = boto3.resource('s3')
 s3_client = boto3.client('s3')
 
 
-def process_1010(dg_config, root_dir, schedule, date_value=dt.datetime.now().strftime('%Y%m%d')):
+def process_1010(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y%m%d')):
     """
     Downloads recursively the given S3 path to the target directory.
     Download & Upload 1010 files from bridg-client-ftp to s3 transformed staging/archive directory
@@ -30,24 +29,15 @@ def process_1010(dg_config, root_dir, schedule, date_value=dt.datetime.now().str
     gpg_1010 = gpg_decrytion('1010_decrypt_key.gpg', root_dir, dg_config.bucket, dg_config.gnupghome)
     paginator = s3_client.get_paginator('list_objects')
 
-    if schedule == 'daily':
-        list_files = ['transactions', 'product', 'product_category', 'organization', 'tenders', 'transaction_item',
-                      'trans_disc_xref', 'discounts']
-    elif schedule == 'weekly':
-        list_files = ['transactions', 'tenders', 'transaction_item', 'trans_disc_xref', 'discounts']
-    else:
-        list_files = []
-
-    logging.info(f'List Files:{list_files}')
-
-    list_files_weekly = ['product', 'product_category', 'organization']
+    list_files = ['transactions', 'product', 'product_category', 'organization', 'tenders', 'transaction_item',
+                  'trans_disc_xref', 'discounts']
 
     for folder in list_files:
         prefix = f'{dg_config.remote_1010_path}/{folder.title()}/bridg_{folder}_{date_value}'
         logger.info(f'Downloading from {prefix}')
 
         try:
-            for result in paginator.paginate(Bucket=dg_config.bucket, Prefix=prefix):
+            for result in paginator.paginate(Bucket=dg_config.bucket,Prefix=prefix):
                 # Download each file individually
                 for content in result['Contents']:
 
@@ -81,21 +71,6 @@ def process_1010(dg_config, root_dir, schedule, date_value=dt.datetime.now().str
                             # Copying file from staging to archive directory to have a backup
                             copy_staging_files(s3_upload_file_path, folder, filename.replace('psv.gz.pgp', 'psv.gz'),
                                                dg_config.bucket, dg_config.s3_archive_path)
-
-                            # Copy the product, org files to weekly path
-                            if folder in list_files_weekly and schedule == 'daily':
-                                # s3_upload_weekly_file_path = f'''{dg_config.s3_staging_path_weekly_1010}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
-                                copy_weekly_staging_files(s3_upload_file_path, folder,
-                                                          filename.replace('psv.gz.pgp', 'psv.gz'),
-                                                          dg_config.bucket, dg_config.s3_staging_path_weekly_1010,
-                                                          partition_col)
-
-                                # s3_upload_weekly_archive_file_path = f'''{dg_config.s3_archive_path_weekly}/{folder.lower()}/dt={partition_col}/{filename.replace('psv.gz.pgp', 'psv.gz')}'''
-                                copy_staging_files(s3_upload_file_path, folder,
-                                                   filename.replace('psv.gz.pgp', 'psv.gz'),
-                                                   dg_config.bucket, dg_config.s3_archive_path_weekly)
-
-
 
                     except Exception as e:
                         raise Exception(f"Error in PGP-Decrypt 1010\n {e}")
@@ -160,7 +135,7 @@ def process_aurus(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y
         raise Exception(f"S3 Object not found {prefix}\n {e}")
 
 
-def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
+def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type):
     """
     Serially download & upload Aurus/1010 files from bridg-client-ftp to s3 transformed directory
     1. Download raw Aurus/1010 files from the ftp bucket according to args_dt date/date_range provided
@@ -179,10 +154,9 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
         # 2. dt1:dt2 - process all dates between dt1 and dt2 inclusive on both sides
         # 3. dt - process a single date
 
-        # clean staging files in daily if already present
-        if schedule == "daily":
-            s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
-            logger.info(f"Deleted staging file path {dg_config.s3_staging_path_1010}")
+        # clean staging files if already present
+        s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
+        logger.info(f"Deleted staging file path {dg_config.s3_staging_path_1010}")
 
         # pattern-1
         if ',' in args_dt:
@@ -190,7 +164,7 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
                 logger.info(f'Starting process for date - {args_dt}')
                 if (date_arg > dg_config.aurus_start_date):
                     process_aurus(dg_config, root_dir, date_arg)
-                process_1010(dg_config, root_dir, schedule, date_arg)
+                process_1010(dg_config, root_dir, date_arg)
 
         # pattern-2
         elif ':' in args_dt:
@@ -202,7 +176,7 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
                 date_arg = (str(start_date)).split(' ')[0].replace('-', '')
                 if (date_arg > dg_config.aurus_start_date):
                     process_aurus(dg_config, root_dir, date_arg)
-                process_1010(dg_config, root_dir, schedule, date_arg)
+                process_1010(dg_config, root_dir, date_arg)
                 start_date += dt.timedelta(days=1)
 
         # pattern-3
@@ -210,9 +184,9 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
             logger.info(f'Starting process for date - {args_dt}')
             if (args_dt > dg_config.aurus_start_date):
                 process_aurus(dg_config, root_dir, args_dt)
-            process_1010(dg_config, root_dir, schedule, args_dt)
+            process_1010(dg_config, root_dir, args_dt)
 
-        msg = {"Action": "Start EMR Process Gold", "EnvDetail": env, "Type": type, "Schedule": schedule}
+        msg = {"Action": "Start EMR Process Gold", "EnvDetail": env, "Type" : type}
         json_msg = json.dumps(msg)
         logger.info(f"Sending message - {json_msg} to SNS")
 
@@ -223,7 +197,6 @@ def pgp_decrypt(dg_config: DgConfig, args_dt, root_dir, env, type, schedule):
     except Exception as e:
         send_sns_alert(f"{type} Transformer: PGP Decrypt failed", e)
         logger.error(f"{type} Transformer: PGP Decrypt failed {e}", exc_info=True)
-
         s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
         logger.info(f"Cleaned up staging file path {dg_config.s3_staging_path_1010}")
         raise Exception(f"{type} Transformer: PGP Decrypt failed {e}")
