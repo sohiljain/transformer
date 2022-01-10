@@ -43,7 +43,7 @@ provider:
   timeout: 600 # The default is 6
   region: ${self:custom.AWS_REGION}
   versionFunctions: false
-  deploymentBucket: cdp.com.serverless.${self:custom.AWS_REGION}.deploys
+  deploymentBucket: ${self:custom.BRIDG_ENV_NAME}.com.serverless.${self:custom.AWS_REGION}.deploys
   role: DollarGeneralTransformerRole
   iamRoleStatements:
     - Effect: "Allow"
@@ -130,14 +130,14 @@ resources:
                   Action:
                     - secretsmanager:*
                   Resource:
-                    - "arn:aws:secretsmanager:us-west-2:596832493770:secret:/cdp/SecretManager/dollargeneral-transformer/-YjmQfu"
+                    - "arn:aws:secretsmanager:us-west-2:596832493770:secret:/${self:custom.BRIDG_ENV_NAME}/SecretManager/dollargeneral-transformer/-YjmQfu"
                 - Effect: Allow
                   Action:
                     - ssm:GetParametersByPath
                     - ssm:GetParameters
                     - ssm:GetParameter
                   Resource:
-                    - "arn:aws:ssm:us-west-2:596832493770:parameter/cdp/SNS/Alarm"
+                    - "arn:aws:ssm:us-west-2:596832493770:parameter/${self:custom.BRIDG_ENV_NAME}/SNS/Alarm"
                 - Effect: Allow
                   Action:
                     - SNS:Publish
@@ -160,5 +160,6 @@ functions:
       BATCH_JOBDEFINITION: ${self:custom.BATCH_JOBDEFINITION}
       ALERT_SNS_PARAM: ${self:custom.ALERT_SNS_PARAM}
       BRIDG_ENV_NAME: ${self:custom.BRIDG_ENV_NAME}
+      AWS_DEFAULT_REGION: ${self:custom.AWS_DEFAULT_REGION}
     tags:
       Environment: ${self:custom.BRIDG_ENV_NAME}
