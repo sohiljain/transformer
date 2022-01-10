@@ -7,6 +7,7 @@ import boto3
 from pyspark.sql.functions import *
 from utils.utils import get_matching_s3_keys, s3_delete_file, count_check, send_sns_alert
 from utils.config import DgConfig
+from datetime import datetime, timedelta
 
 s3_resource = boto3.resource('s3')
 s3_client = boto3.client('s3')
@@ -62,7 +63,7 @@ def create_temptable(table_name, spark, dg_config):
     logger.info(f'Created temp view for dg_{table_name}')
 
 
-def format_gold_file(table, spark, dg_config, type):
+def format_gold_file(table, spark, dg_config, type, schedule):
     """
     Renaming the gold file from part file
     :param table: table name
@@ -102,9 +103,13 @@ def format_gold_file(table, spark, dg_config, type):
                 }
 
                 dt = key.split('/')[-2].split('=')[1]
+                current_date = (datetime.now() + timedelta(days=1)).strftime('%Y%m%d')
 
                 #TODO s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}_{key}.psv.gz' - To make mulitple part files and remove repartition - Sid
+                # https://bridg-client-ftp.s3.amazonaws.com/dollargeneral-popshelf/transformed/test/temp/transactions/partition_col=20210601/part-00000-6e5c766d-17a3-47f4-9366-3606c6bf4e26.c000.csv.gz
                 s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}.psv.gz'
+                if schedule == "weekly":
+                    s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{current_date}_{dt}_{schedule}.psv.gz'
                 if 'transaction_item' in s3_gold_temp:
                     s3_gold_temp = s3_gold_temp.replace('transaction_', 'line_')
                 logger.info(f'Moving files to {s3_gold_temp} ')
@@ -118,7 +123,7 @@ def format_gold_file(table, spark, dg_config, type):
             raise Exception(f'{e} Unable to rename file')
 
 
-def process_gold(spark, dg_config: DgConfig, type):
+def process_gold(spark, dg_config: DgConfig, type, schedule):
     """
     Starting gold data processing
     :param spark: spark context
@@ -140,12 +145,12 @@ def process_gold(spark, dg_config: DgConfig, type):
         for table in ['transactions', 'product_category', 'product', 'organization', 'tenders', 'transaction_item', 'discounts']:
             logger.info(f'Starting {table}')
             create_temptable(table, spark, dg_config)
-            format_gold_file(table, spark, dg_config, type)
+            format_gold_file(table, spark, dg_config, type, schedule)
             logger.info(f'Finished {table}')
             logger.info('---------------------------')
 
     except Exception as e:
-        # send_sns_alert(f"{type} Transformer: EMR processing failed", e)
+        send_sns_alert(f"{type} Transformer: EMR processing failed", e)
         logger.error(f"{type} Transformer: EMR processing failed {e}", exc_info=True)
         raise Exception(f"{type} Transformer: EMR processing failed {e}")
 

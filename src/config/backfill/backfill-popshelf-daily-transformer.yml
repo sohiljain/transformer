@@ -1,18 +1,21 @@
-# Copyright (c) 2020 Bridg Inc. All rights reserved.
+# Copyright (c) 2021 Bridg Inc. All rights reserved.
 # @author Sohil Jain <sohil.jain@bridg.com>
 
 bucket: bridg-client-ftp
 s3a_bucket: s3a://bridg-client-ftp
 s3_staging_path: dollargeneral/transformed/staging
-s3_staging_path_1010: dollargeneral/transformed/staging/1010
-s3_tmp_path: dollargeneral/transformed/temp
-s3_gold_path: dollargeneral/transformed/gold
-s3_archive_path: dollargeneral/transformed/archive
-remote_1010_path: dollargeneral/1010/Daily
+s3_staging_path_1010: dollargeneral-popshelf/transformed/staging/1010
+s3_tmp_path: dollargeneral-popshelf/transformed/temp
+s3_gold_path: dollargeneral-popshelf/transformed/gold
+s3_archive_path: dollargeneral-popshelf/transformed/archive
+remote_1010_path: dollargeneral-popshelf/1010/Daily
+s3_staging_path_weekly_1010: dollargeneral-popshelf/weekly_transformed/staging/1010
+s3_archive_path_weekly: dollargeneral-popshelf/weekly_transformed/archive
 remote_Aurus_path: dollargeneral/Aurus/Daily
 local_Path: Documents/DG
 secret: /cdp/SecretManager/dollargeneral-transformer/
-aurus_startdate: '20200910'
+aurus_startdate: '99990101'
+
 
 table_queries:
 
