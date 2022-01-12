@@ -3,8 +3,8 @@
 
 bucket: dev-cdp-data-lake
 s3a_bucket: s3a://dev-cdp-data-lake
-s3_staging_path: dollargeneral/transformed/backfill_staging
-s3_staging_path_1010: dollargeneral-popshelf/transformed/staging/1010
+s3_staging_path: dollargeneral/transformed/staging
+s3_staging_path_1010: dollargeneral-popshelf/transformed/backfill_staging/1010
 s3_tmp_path: dollargeneral-popshelf/transformed/temp
 s3_gold_path: dollargeneral-popshelf/transformed/gold
 s3_archive_path: dollargeneral-popshelf/transformed/archive
