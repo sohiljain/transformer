@@ -9,7 +9,7 @@ s3_tmp_path: dollargeneral/transformed/temp
 s3_gold_path: dollargeneral/transformed/gold
 s3_archive_path: dollargeneral/transformed/archive
 remote_1010_path: dollargeneral/1010/Daily
-s3_staging_path_weekly_1010: dollargeneral/weekly_transformed/staging/1010
+s3_staging_path_weekly_1010: dollargeneral/weekly_transformed/backfill_staging/1010
 s3_archive_path_weekly: dollargeneral/weekly_transformed/archive
 remote_Aurus_path: dollargeneral/Aurus/Daily
 local_Path: Documents/DG

@@ -21,7 +21,7 @@ Instances:
     - Name: Master nodes
       Market: ON_DEMAND
       InstanceRole: MASTER
-      InstanceType: m6g.xlarge
+      InstanceType: m6g.4xlarge
       InstanceCount: 1
       EbsConfiguration:
         EbsBlockDeviceConfigs:
