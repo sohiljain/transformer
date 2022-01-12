@@ -132,6 +132,7 @@ def process_gold(spark, dg_config: DgConfig, type, schedule):
     """
     try:
         spark.sql("set fs.s3a.multiobjectdelete.enable=false")
+        spark.sql("set spark.sql.broadcastTimeout=3600")
         logger.info('spark initiated')
 
         # clean temp files if already present
