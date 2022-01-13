@@ -2,7 +2,7 @@
 # @author Sohil Jain <sohil.jain@bridg.com>
 
 Name: backfill-cdp-dg-transformer-daily-emr-cluster
-LogUri: "s3://dev-cdp-logs-bucket/dollargeneral/"
+LogUri: "s3://cdp-logs-bucket/dollargeneral/"
 ReleaseLabel: "emr-6.4.0"
 Applications:
     - Name: "Spark"
@@ -12,8 +12,8 @@ Configurations:
         - Classification: export
           Properties:
             PYSPARK_PYTHON: "/usr/bin/python3"
-            ALERT_SNS_PARAM: "/dev-cdp/SNS/Alarm"
-            ALERT_SNS_ARN: "arn:aws:sns:us-west-2:020970917333:devops-alerts-dev"
+            ALERT_SNS_PARAM: "/cdp/SNS/Alarm"
+            ALERT_SNS_ARN: "arn:aws:sns:us-west-2:596832493770:cdp-SNS-1XM4Q7BJBS0UB-AlarmTopic-GWQ3SR7P7LPY"
 
 Instances:
     HadoopVersion: Amazon 2.8.5
@@ -57,7 +57,7 @@ Instances:
     Ec2KeyName: towerbridg
     KeepJobFlowAliveWhenNoSteps: False
     TerminationProtected: False
-    Ec2SubnetId: subnet-01d153dc6df563b60
+    Ec2SubnetId: subnet-080ca4bae7f28e8a9
 Steps:
     - Name: transformer-step-1
       ActionOnFailure: TERMINATE_CLUSTER
@@ -81,14 +81,14 @@ Steps:
         Args:
         - spark-submit
         - --py-files
-        - s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/dg_transformer_prepare.zip
-        - s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/main/run.py
+        - s3://bridg-binary-registry/bridg-dollargeneral-transformer/dg_transformer_prepare.zip
+        - s3://bridg-binary-registry/bridg-dollargeneral-transformer/main/run.py
         - --module
         - emr_process_gold
         - --env
         - backfill
         - --root-dir
-        - s3://towerbridg-binary-registry/bridg-dollargeneral-transformer
+        - s3://bridg-binary-registry/bridg-dollargeneral-transformer
         - --type
         - dg
         - --schedule
