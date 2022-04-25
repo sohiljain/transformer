@@ -58,7 +58,7 @@ pipeline {
           sh 'aws s3 rm s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
           sh 'aws s3 cp src s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
           sh 'aws s3 cp s3://bridg-devops-development/bin/deploy_bridg_service.py .'
-          sh '$(aws ecr get-login --no-include-email --region us-west-2)'
+          sh './deploy/login.sh'
           sh 'python3 deploy_bridg_service.py'
           sh 'serverless deploy --stage development --verbose'
       }
@@ -91,7 +91,7 @@ pipeline {
             SECURITY_GROUP = 'sg-08bcfd652a860cf54'
       }
       steps {
-          sh '$(aws ecr get-login --no-include-email --region us-west-2)'
+          sh './deploy/login.sh'
  	      sh 'aws s3 cp s3://bridg-devops-production/bin/deploy_bridg_service.py .'
           sh 'python3 deploy_bridg_service.py'
           sh 'pip install --target ./src pyyaml'
