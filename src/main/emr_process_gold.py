@@ -104,7 +104,7 @@ def format_gold_file(table, spark, dg_config, type, schedule):
 
                 dt = key.split('/')[-2].split('=')[1]
                 tommorrow_date = (datetime.now() + timedelta(days=1)).strftime('%Y%m%d')
-                yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%Y%m%d')
+                yesterday_date = (datetime.strptime(dt, '%Y%m%d') - timedelta(days=1)).strftime('%Y%m%d')
 
                 #TODO s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}_{key}.psv.gz' - To make mulitple part files and remove repartition - Sid
                 # https://bridg-client-ftp.s3.amazonaws.com/dollargeneral-popshelf/transformed/test/temp/transactions/partition_col=20210601/part-00000-6e5c766d-17a3-47f4-9366-3606c6bf4e26.c000.csv.gz
