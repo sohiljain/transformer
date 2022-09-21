@@ -43,19 +43,21 @@ if __name__ == "__main__":
         from pyspark.sql import SparkSession
         s3 = boto3.client('s3', region_name='us-west-2')
 
+        if args.module == "emr_process_gold":
+            from pyspark.sql import SparkSession
         # Setting for local testing
-        if os.environ['BRIDG_ENV_NAME'] == 'local':
-            os.environ[
-                'PYSPARK_SUBMIT_ARGS'] = "--packages=com.amazonaws:aws-java-sdk-bundle:1.12.304,org.apache.hadoop:hadoop-aws:3.3.2 pyspark-shell"
-            session = boto3.session.Session(profile_name='bdl')
-            spark = SparkSession.builder \
-                .config("spark.hadoop.fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
-                .config("spark.hadoop.fs.s3a.aws.credentials.provider",
-                        "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider") \
-                .config("spark.hadoop.fs.s3a.access.key", session.get_credentials().access_key) \
-                .config("spark.hadoop.fs.s3a.secret.key", session.get_credentials().secret_key) \
-                .getOrCreate()
-        else:
+        # if os.environ['BRIDG_ENV_NAME'] == 'local':
+        #     os.environ[
+        #         'PYSPARK_SUBMIT_ARGS'] = "--packages=com.amazonaws:aws-java-sdk-bundle:1.12.304,org.apache.hadoop:hadoop-aws:3.3.2 pyspark-shell"
+        #     session = boto3.session.Session(profile_name='bdl')
+        #     spark = SparkSession.builder \
+        #         .config("spark.hadoop.fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
+        #         .config("spark.hadoop.fs.s3a.aws.credentials.provider",
+        #                 "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider") \
+        #         .config("spark.hadoop.fs.s3a.access.key", session.get_credentials().access_key) \
+        #         .config("spark.hadoop.fs.s3a.secret.key", session.get_credentials().secret_key) \
+        #         .getOrCreate()
+        # else:
             spark = SparkSession.builder.getOrCreate()
             s3_bucket = root_dir.replace('s3://', '').split('/')[0]
             s3_key = '/'.join(root_dir.replace('s3://', '').split('/')[1:])
