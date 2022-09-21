@@ -8,6 +8,7 @@ from pyspark.sql.functions import *
 from utils.utils import get_matching_s3_keys, s3_delete_file, count_check, send_sns_alert
 from utils.config import DgConfig
 from datetime import datetime, timedelta
+import pandas as pd
 
 s3_resource = boto3.resource('s3')
 s3_client = boto3.client('s3')
@@ -16,6 +17,28 @@ s3_client = boto3.client('s3')
 logging.basicConfig(format='%(name)s:%(levelname)s:%(lineno)d: %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+def format_metadata(brand_id, entity_type, source_count, destination_count, ingestion_date, event_start_time,
+                    event_end_time, source, destination, args, event_result, event_notes={}):
+    event_type = 'transformer'
+    data_category = 'pos'
+    event_notes.update({"SOURCE_TYPE": "S3", "DESTINATION_TYPE": "S3", "COMMAND_ARGS": args})
+
+    return {'BRAND_SID': brand_id,
+            'EVENT_TYPE': event_type,
+            'DATA_CATEGORY': data_category,
+            'INGESTION_DATE': ingestion_date,
+            'ENTITY_TYPE': entity_type,
+            'SOURCE_COUNT': source_count,
+            'DESTINATION_COUNT': destination_count,
+            'SOURCE': source,
+            'DESTINATION': destination,
+            'EVENT_START_TIME': event_start_time,
+            'EVENT_END_TIME': event_end_time,
+            'EVENT_RESULT': event_result,
+            'EVENT_NOTES': event_notes
+            }
 
 
 def create_temptable(table_name, spark, dg_config):
@@ -44,26 +67,26 @@ def create_temptable(table_name, spark, dg_config):
 
         if table_name == 'transactions':
             df = (df.withColumn("SourceOrganizationNumber", df["SourceOrganizationNumber"].cast("integer"))
-             .withColumn("DateCreated", df["DateCreated"].cast("date"))
-             .withColumn("sourcetransactionnumber", coalesce(df["sourcetransactionnumber"], lit("")))
-             .withColumn("postransactionnumber", coalesce(df["postransactionnumber"], lit("")))
-             .withColumn("registernumber", coalesce(df["registernumber"], lit("")))
-            )
+                  .withColumn("DateCreated", df["DateCreated"].cast("date"))
+                  .withColumn("sourcetransactionnumber", coalesce(df["sourcetransactionnumber"], lit("")))
+                  .withColumn("postransactionnumber", coalesce(df["postransactionnumber"], lit("")))
+                  .withColumn("registernumber", coalesce(df["registernumber"], lit("")))
+                  )
 
         if table_name == 'transaction_item':
             df = (df.withColumn("SourceOrganizationNumber", df["SourceOrganizationNumber"].cast("integer"))
-             .withColumn("datecreated", df["datecreated"].cast("date")))
+                  .withColumn("datecreated", df["datecreated"].cast("date")))
 
         if table_name == 'tenders':
             df = (df.withColumn("SourceOrganizationNumber", df["SourceOrganizationNumber"].cast("integer"))
-             .withColumn("transactiondate", df["transactiondate"].cast("date"))
-             .withColumn("tenderamt", df["tenderamt"].cast("double")))
+                  .withColumn("transactiondate", df["transactiondate"].cast("date"))
+                  .withColumn("tenderamt", df["tenderamt"].cast("double")))
 
     df.createOrReplaceTempView(f'dg_{table_name}')
     logger.info(f'Created temp view for dg_{table_name}')
 
 
-def format_gold_file(table, spark, dg_config, type, schedule):
+def format_gold_file(table, spark, dg_config, type, schedule, args_dt):
     """
     Renaming the gold file from part file
     :param table: table name
@@ -86,11 +109,13 @@ def format_gold_file(table, spark, dg_config, type, schedule):
     else:
         tmp_path = f"{dg_config.s3a_bucket}/{dg_config.s3_tmp_path}/{table}/"
         df.repartition(1, 'partition_col').write.partitionBy('partition_col').csv(tmp_path, header=True,
-                            compression='gzip', sep='|', emptyValue='', mode='overwrite', quote='"', escape='"')
+                                                                                  compression='gzip', sep='|',
+                                                                                  emptyValue='', mode='overwrite',
+                                                                                  quote='"', escape='"')
         logger.info(f'{tmp_path} writing done')
 
         # Record count validation call. Proceed writing to gold only if validation succeeds otherwise call sns_alert
-        count_check(spark, dg_config.s3a_bucket, dg_config.s3_staging_path_1010, dg_config.s3_tmp_path, table, type)
+        source_count, destination_count, event_result = count_check(spark, dg_config.s3a_bucket, dg_config.s3_staging_path_1010, dg_config.s3_tmp_path, table, type)
 
         try:
             tmp_path_2 = f'{dg_config.s3_tmp_path}/{table}/partition_col'
@@ -106,8 +131,6 @@ def format_gold_file(table, spark, dg_config, type, schedule):
                 tommorrow_date = (datetime.now() + timedelta(days=1)).strftime('%Y%m%d')
                 yesterday_date = (datetime.strptime(dt, '%Y%m%d') - timedelta(days=1)).strftime('%Y%m%d')
 
-                #TODO s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{dt}_{key}.psv.gz' - To make mulitple part files and remove repartition - Sid
-                # https://bridg-client-ftp.s3.amazonaws.com/dollargeneral-popshelf/transformed/test/temp/transactions/partition_col=20210601/part-00000-6e5c766d-17a3-47f4-9366-3606c6bf4e26.c000.csv.gz
                 if schedule == "weekly":
                     s3_gold_temp = f'{dg_config.s3_gold_path}/{table}/bridg_{table}_{tommorrow_date}_{dt}_{schedule}.psv.gz'
                 else:
@@ -119,19 +142,27 @@ def format_gold_file(table, spark, dg_config, type, schedule):
                 s3_resource.meta.client.copy(copy_source, dg_config.bucket, s3_gold_temp)
 
             logger.info(f'{tmp_path_2} renamed to {s3_gold_temp}')
+            return source_count, destination_count, event_result
 
         except Exception as e:
             logger.error(f'{e} Unable to rename file')
             raise Exception(f'{e} Unable to rename file')
 
 
-def process_gold(spark, dg_config: DgConfig, type, schedule):
+def process_gold(spark, dg_config: DgConfig, args):
     """
     Starting gold data processing
     :param spark: spark context
     :param dg_config: config
     :return: appropriate success/failure message
     """
+
+    all_tables_metadata = []
+    type = args.type
+    schedule = args.schedule
+    args_dt = args.date
+    event_start_time = datetime.utcnow()
+
     try:
         spark.sql("set fs.s3a.multiobjectdelete.enable=false")
         spark.sql("set spark.sql.autoBroadcastJoinThreshold=-1")
@@ -147,17 +178,61 @@ def process_gold(spark, dg_config: DgConfig, type, schedule):
 
         for table in ['transactions', 'product_category', 'product', 'organization', 'tenders', 'transaction_item', 'discounts']:
             logger.info(f'Starting {table}')
+
             create_temptable(table, spark, dg_config)
-            format_gold_file(table, spark, dg_config, type, schedule)
+
+            event_start_time = datetime.utcnow()
+            source_count, destination_count, event_result = format_gold_file(table, spark, dg_config, type, schedule, args_dt)
+            event_end_time = datetime.utcnow()
+
+            if event_result == 'FAILURE':
+                raise Exception(f"Count check failure for {table}. Transformed record count : {destination_count} Staging row count : {source_count}")
+
+            table_metadata = format_metadata(
+                brand_id=type,
+                entity_type=table,
+                ingestion_date=args_dt,
+                source_count=source_count,
+                destination_count=destination_count,
+                source=dg_config.remote_1010_path,
+                event_start_time=event_start_time,
+                event_end_time=event_end_time,
+                destination=dg_config.s3_gold_path,
+                args = args,
+                event_result=event_result
+            )
+            all_tables_metadata.append(table_metadata)
             logger.info(f'Finished {table}')
             logger.info('---------------------------')
 
     except Exception as e:
+        source_count = source_count if 'source_count' in locals() else -1
+        destination_count = destination_count if 'destination_count' in locals() else -1
+        table_metadata = format_metadata(
+            brand_id=type,
+            entity_type=table or "",
+            ingestion_date=args_dt,
+            source_count= source_count,
+            destination_count= destination_count,
+            source=dg_config.remote_1010_path,
+            event_start_time=event_start_time,
+            event_end_time=datetime.utcnow(),
+            destination=dg_config.s3_gold_path,
+            args=args,
+            event_result='FAILURE',
+            event_notes={'FAILURE_REASON': e.desc}
+        )
+        all_tables_metadata.append(table_metadata)
+
         send_sns_alert(f"{type} Transformer: EMR processing failed", e)
         logger.error(f"{type} Transformer: EMR processing failed {e}", exc_info=True)
         raise Exception(f"{type} Transformer: EMR processing failed {e}")
 
     finally:
+        df = pd.DataFrame(all_tables_metadata)
+        df.to_csv(f"{dg_config.s3a_bucket}/{dg_config.metadata_path}/{args_dt}_{event_start_time}.csv", header= None,
+                  index=False)
+        logger.info(f"Metadata writing done on {dg_config.s3a_bucket}/{dg_config.metadata_path}")
         s3_delete_file(dg_config.s3_tmp_path, dg_config.bucket)
         logger.info(f"Deleted temporary file path {dg_config.s3_tmp_path}")
         s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)

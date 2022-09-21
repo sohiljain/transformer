@@ -9,7 +9,7 @@ import argparse
 import logging
 from datetime import datetime
 import yaml
-import boto3
+import boto3, os
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(message)s')
@@ -41,13 +41,27 @@ if __name__ == "__main__":
     # Setup pyspark environment and config file if module is emr_process_gold
     if args.module == "emr_process_gold":
         from pyspark.sql import SparkSession
-        spark = SparkSession.builder.getOrCreate()
         s3 = boto3.client('s3', region_name='us-west-2')
-        s3_bucket = root_dir.replace('s3://', '').split('/')[0]
-        s3_key = '/'.join(root_dir.replace('s3://', '').split('/')[1:])
-        spark.sparkContext.addPyFile(f'{root_dir}/dg_transformer_prepare.zip')
-        s3.download_file(s3_bucket, f'{s3_key}/config/{args.env}/{config_file}', config_file)
-        config_file_path = config_file
+
+        # Setting for local testing
+        if os.environ['BRIDG_ENV_NAME'] == 'local':
+            os.environ[
+                'PYSPARK_SUBMIT_ARGS'] = "--packages=com.amazonaws:aws-java-sdk-bundle:1.12.304,org.apache.hadoop:hadoop-aws:3.3.2 pyspark-shell"
+            session = boto3.session.Session(profile_name='bdl')
+            spark = SparkSession.builder \
+                .config("spark.hadoop.fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
+                .config("spark.hadoop.fs.s3a.aws.credentials.provider",
+                        "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider") \
+                .config("spark.hadoop.fs.s3a.access.key", session.get_credentials().access_key) \
+                .config("spark.hadoop.fs.s3a.secret.key", session.get_credentials().secret_key) \
+                .getOrCreate()
+        else:
+            spark = SparkSession.builder.getOrCreate()
+            s3_bucket = root_dir.replace('s3://', '').split('/')[0]
+            s3_key = '/'.join(root_dir.replace('s3://', '').split('/')[1:])
+            spark.sparkContext.addPyFile(f'{root_dir}/dg_transformer_prepare.zip')
+            s3.download_file(s3_bucket, f'{s3_key}/config/{args.env}/{config_file}', config_file)
+            config_file_path = config_file
 
     # Parse the yaml config file
     with open(config_file_path, 'r') as yml_file:
@@ -67,6 +81,7 @@ if __name__ == "__main__":
         pgp_decrypt(dg_config, args_dt, root_dir, args.env, args.type, args.schedule)
     elif args.module == "emr_process_gold":
         from main.emr_process_gold import process_gold
-        process_gold(spark, dg_config, args.type, args.schedule)
+        process_gold(spark, dg_config, args)
     else:
         raise ValueError(f'Invalid or no module value passed: {args.module}')
+

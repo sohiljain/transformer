@@ -38,4 +38,5 @@ class DgConfig:
         self.cols = yaml_cfg.get('cols', '')
         self.s3_staging_path_weekly_1010 = yaml_cfg.get('s3_staging_path_weekly_1010','')
         self.s3_archive_path_weekly = yaml_cfg.get('s3_archive_path_weekly','')
+        self.metadata_path = yaml_cfg.get('metadata_path','')
         self.aurus_start_date = yaml_cfg.get('aurus_startdate', '20200910')
