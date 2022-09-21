@@ -54,6 +54,7 @@ pipeline {
       steps {
           sh 'pip install --target ./src pyyaml'
           sh 'pip install --target ./src s3fs'
+          sh 'pip install --target ./src boto3'
           sh 'pip install --target ./src python-gnupg==0.4.6'
           zip zipFile: 'src/dg_transformer_prepare.zip', archive: false, dir: 'src'
           sh 'aws s3 rm s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
@@ -97,6 +98,7 @@ pipeline {
           sh 'python3 deploy_bridg_service.py'
           sh 'pip install --target ./src pyyaml'
           sh 'pip install --target ./src s3fs'
+          sh 'pip install --target ./src boto3'
           sh 'pip install --target ./src python-gnupg==0.4.6'
           zip zipFile: 'src/dg_transformer_prepare.zip', archive: false, dir: 'src'
           sh 'aws s3 rm s3://bridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
