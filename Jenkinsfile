@@ -54,6 +54,7 @@ pipeline {
       steps {
           sh 'pip install --target ./src pyyaml'
           sh 'pip install --target ./src python-gnupg==0.4.6'
+          sh 'pip install --target ./src pandas'
           zip zipFile: 'src/dg_transformer_prepare.zip', archive: false, dir: 'src'
           sh 'aws s3 rm s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
           sh 'aws s3 cp src s3://towerbridg-binary-registry/bridg-dollargeneral-transformer/ --recursive'
