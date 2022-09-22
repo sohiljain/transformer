@@ -8,7 +8,6 @@ from pyspark.sql.functions import *
 from utils.utils import get_matching_s3_keys, s3_delete_file, count_check, send_sns_alert
 from utils.config import DgConfig
 from datetime import datetime, timedelta
-import pandas as pd
 
 s3_resource = boto3.resource('s3')
 s3_client = boto3.client('s3')
@@ -37,7 +36,7 @@ def format_metadata(brand_id, entity_type, source_count, destination_count, inge
             'EVENT_START_TIME': event_start_time,
             'EVENT_END_TIME': event_end_time,
             'EVENT_RESULT': event_result,
-            'EVENT_NOTES': event_notes
+            'EVENT_NOTES': str(event_notes)
             }
 
 
@@ -220,7 +219,7 @@ def process_gold(spark, dg_config: DgConfig, args):
             destination=dg_config.s3_gold_path,
             args=args,
             event_result='FAILURE',
-            event_notes={'FAILURE_REASON': e.desc}
+            event_notes=str({'FAILURE_REASON': e.desc})
         )
         all_tables_metadata.append(table_metadata)
 
@@ -229,9 +228,11 @@ def process_gold(spark, dg_config: DgConfig, args):
         raise Exception(f"{type} Transformer: EMR processing failed {e}")
 
     finally:
-        df = pd.DataFrame(all_tables_metadata)
-        df.to_csv(f"{dg_config.s3a_bucket}/{dg_config.metadata_path}/{args_dt}_{event_start_time}.csv", header= None,
-                  index=False)
+        filepath = f"{dg_config.s3a_bucket}/{dg_config.metadata_path}{args_dt}_{datetime.utcnow()}"
+        tmp_path = f"{dg_config.s3a_bucket}/{dg_config.s3_tmp_path}/{table}/"
+        df = spark.createDataFrame(all_tables_metadata)
+        df.repartition(1).write.csv(filepath, header=False, sep=',')
+        logger.info(f'{filepath} writing done')
         logger.info(f"Metadata writing done on {dg_config.s3a_bucket}/{dg_config.metadata_path}")
         s3_delete_file(dg_config.s3_tmp_path, dg_config.bucket)
         logger.info(f"Deleted temporary file path {dg_config.s3_tmp_path}")
