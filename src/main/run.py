@@ -42,9 +42,13 @@ if __name__ == "__main__":
     if args.module == "emr_process_gold":
         from pyspark.sql import SparkSession
         s3 = boto3.client('s3', region_name='us-west-2')
+        spark = SparkSession.builder.getOrCreate()
+        s3_bucket = root_dir.replace('s3://', '').split('/')[0]
+        s3_key = '/'.join(root_dir.replace('s3://', '').split('/')[1:])
+        spark.sparkContext.addPyFile(f'{root_dir}/dg_transformer_prepare.zip')
+        s3.download_file(s3_bucket, f'{s3_key}/config/{args.env}/{config_file}', config_file)
+        config_file_path = config_file
 
-        if args.module == "emr_process_gold":
-            from pyspark.sql import SparkSession
         # Setting for local testing
         # if os.environ['BRIDG_ENV_NAME'] == 'local':
         #     os.environ[
@@ -58,12 +62,6 @@ if __name__ == "__main__":
         #         .config("spark.hadoop.fs.s3a.secret.key", session.get_credentials().secret_key) \
         #         .getOrCreate()
         # else:
-            spark = SparkSession.builder.getOrCreate()
-            s3_bucket = root_dir.replace('s3://', '').split('/')[0]
-            s3_key = '/'.join(root_dir.replace('s3://', '').split('/')[1:])
-            spark.sparkContext.addPyFile(f'{root_dir}/dg_transformer_prepare.zip')
-            s3.download_file(s3_bucket, f'{s3_key}/config/{args.env}/{config_file}', config_file)
-            config_file_path = config_file
 
     # Parse the yaml config file
     with open(config_file_path, 'r') as yml_file:
