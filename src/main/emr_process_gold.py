@@ -8,6 +8,7 @@ from pyspark.sql.functions import *
 from utils.utils import get_matching_s3_keys, s3_delete_file, count_check, send_sns_alert
 from utils.config import DgConfig
 from datetime import datetime, timedelta
+import json
 
 s3_resource = boto3.resource('s3')
 s3_client = boto3.client('s3')
@@ -22,7 +23,7 @@ def format_metadata(brand_id, entity_type, source_count, destination_count, inge
                     event_end_time, source, destination, args, event_result, event_notes={}):
     event_type = 'transformer'
     data_category = 'pos'
-    event_notes.update({"SOURCE_TYPE": "S3", "DESTINATION_TYPE": "S3", "COMMAND_ARGS": args})
+    event_notes.update({"SOURCE_TYPE": "S3", "DESTINATION_TYPE": "S3", "COMMAND_ARGS": vars(args)})
 
     return {'BRAND_SID': brand_id,
             'EVENT_TYPE': event_type,
@@ -36,7 +37,7 @@ def format_metadata(brand_id, entity_type, source_count, destination_count, inge
             'EVENT_START_TIME': event_start_time,
             'EVENT_END_TIME': event_end_time,
             'EVENT_RESULT': event_result,
-            'EVENT_NOTES': str(event_notes)
+            'EVENT_NOTES': json.dumps(event_notes)
             }
 
 
@@ -156,11 +157,13 @@ def process_gold(spark, dg_config: DgConfig, args):
     :return: appropriate success/failure message
     """
 
+    #Initializing variables
     all_tables_metadata = []
     type = args.type
     schedule = args.schedule
     args_dt = args.date
     event_start_time = datetime.utcnow()
+    source_count, destination_count = None, None
 
     try:
         spark.sql("set fs.s3a.multiobjectdelete.enable=false")
@@ -176,6 +179,8 @@ def process_gold(spark, dg_config: DgConfig, args):
             logger.info(f'{table} created')
 
         for table in ['transactions', 'product_category', 'product', 'organization', 'tenders', 'transaction_item', 'discounts']:
+            #Initializing source_count and destination_count values before starting each table
+            source_count, destination_count = None, None
             logger.info(f'Starting {table}')
 
             create_temptable(table, spark, dg_config)
@@ -205,8 +210,6 @@ def process_gold(spark, dg_config: DgConfig, args):
             logger.info('---------------------------')
 
     except Exception as e:
-        source_count = source_count if 'source_count' in locals() else -1
-        destination_count = destination_count if 'destination_count' in locals() else -1
         table_metadata = format_metadata(
             brand_id=type,
             entity_type=table or "",
@@ -219,7 +222,7 @@ def process_gold(spark, dg_config: DgConfig, args):
             destination=dg_config.s3_gold_path,
             args=args,
             event_result='FAILURE',
-            event_notes=str({'FAILURE_REASON': e.desc})
+            event_notes={'FAILURE_REASON': e.desc}
         )
         all_tables_metadata.append(table_metadata)
 
