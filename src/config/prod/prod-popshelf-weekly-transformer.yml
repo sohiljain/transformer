@@ -14,6 +14,7 @@ s3_archive_path_weekly: dollargeneral-popshelf/weekly_transformed/archive
 remote_Aurus_path: dollargeneral/Aurus/Daily
 local_Path: Documents/DG
 secret: /cdp/SecretManager/dollargeneral-transformer/
+metadata_path: metadata_v2/transformer/
 aurus_startdate: '99990101' #Infinite start date to skip aurus decryption in weekly schedule
 
 
