@@ -49,20 +49,6 @@ if __name__ == "__main__":
         s3.download_file(s3_bucket, f'{s3_key}/config/{args.env}/{config_file}', config_file)
         config_file_path = config_file
 
-        # Setting for local testing
-        # if os.environ['BRIDG_ENV_NAME'] == 'local':
-        #     os.environ[
-        #         'PYSPARK_SUBMIT_ARGS'] = "--packages=com.amazonaws:aws-java-sdk-bundle:1.12.304,org.apache.hadoop:hadoop-aws:3.3.2 pyspark-shell"
-        #     session = boto3.session.Session(profile_name='bdl')
-        #     spark = SparkSession.builder \
-        #         .config("spark.hadoop.fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
-        #         .config("spark.hadoop.fs.s3a.aws.credentials.provider",
-        #                 "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider") \
-        #         .config("spark.hadoop.fs.s3a.access.key", session.get_credentials().access_key) \
-        #         .config("spark.hadoop.fs.s3a.secret.key", session.get_credentials().secret_key) \
-        #         .getOrCreate()
-        # else:
-
     # Parse the yaml config file
     with open(config_file_path, 'r') as yml_file:
         yaml_cfg = yaml.safe_load(yml_file)
