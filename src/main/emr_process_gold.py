@@ -8,6 +8,7 @@ from pyspark.sql.functions import *
 from utils.utils import get_matching_s3_keys, s3_delete_file, count_check, send_sns_alert
 from utils.config import DgConfig
 from datetime import datetime, timedelta
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, IntegerType, TimestampType
 import json
 
 s3_resource = boto3.resource('s3')
@@ -100,7 +101,7 @@ def format_gold_file(table, spark, dg_config, type, schedule, args_dt):
 
     except Exception as e:
         logger.error(f'{e} Error in reading staging file in spark')
-        raise Exception(f'{e} Error in reading staging file in spark')
+        return None, None, "FAILURE"
 
     if df.count() == 0:
         logger.error("--------------------")
@@ -146,7 +147,7 @@ def format_gold_file(table, spark, dg_config, type, schedule, args_dt):
 
         except Exception as e:
             logger.error(f'{e} Unable to rename file')
-            raise Exception(f'{e} Unable to rename file')
+            return None, None, "FAILURE"
 
 
 def process_gold(spark, dg_config: DgConfig, args):
@@ -161,14 +162,31 @@ def process_gold(spark, dg_config: DgConfig, args):
     all_tables_metadata = []
     type = args.type
     schedule = args.schedule
-    args_dt = args.date
+    args_dt = datetime.strptime(args.date, "%Y%m%d").strftime("%Y-%m-%d")
     event_start_time = datetime.utcnow()
     source_count, destination_count = None, None
+
 
     try:
         spark.sql("set fs.s3a.multiobjectdelete.enable=false")
         spark.sql("set spark.sql.autoBroadcastJoinThreshold=-1")
         logger.info('spark initiated')
+
+        schema = StructType([
+            StructField("BRAND_SID", StringType(), True),
+            StructField("EVENT_TYPE", StringType(), True),
+            StructField("DATA_CATEGORY", StringType(), True),
+            StructField("INGESTION_DATE", StringType(), True),
+            StructField("ENTITY_TYPE", StringType(), True),
+            StructField("SOURCE_COUNT", IntegerType(), True),
+            StructField("DESTINATION_COUNT", IntegerType(), True),
+            StructField("SOURCE", StringType(), True),
+            StructField("DESTINATION", StringType(), True),
+            StructField("EVENT_START_TIME", TimestampType(), True),
+            StructField("EVENT_END_TIME", TimestampType(), True),
+            StructField("EVENT_RESULT", StringType(), True),
+            StructField("EVENT_NOTES", StringType(), True)
+        ])
 
         # clean temp files if already present
         s3_delete_file(dg_config.s3_tmp_path, dg_config.bucket)
@@ -228,12 +246,11 @@ def process_gold(spark, dg_config: DgConfig, args):
 
         send_sns_alert(f"{type} Transformer: EMR processing failed", e)
         logger.error(f"{type} Transformer: EMR processing failed {e}", exc_info=True)
-        raise Exception(f"{type} Transformer: EMR processing failed {e}")
 
     finally:
         filepath = f"{dg_config.s3a_bucket}/{dg_config.metadata_path}{args_dt}_{datetime.utcnow()}"
         tmp_path = f"{dg_config.s3a_bucket}/{dg_config.s3_tmp_path}/{table}/"
-        df = spark.createDataFrame(all_tables_metadata)
+        df = spark.createDataFrame(all_tables_metadata, schema=schema)
         df = df.select(["BRAND_SID", "EVENT_TYPE", "DATA_CATEGORY", "INGESTION_DATE", "ENTITY_TYPE", "SOURCE_COUNT", "DESTINATION_COUNT", "SOURCE", "DESTINATION", "EVENT_START_TIME", "EVENT_END_TIME", "EVENT_RESULT", "EVENT_NOTES"])
         df.repartition(1).write.csv(filepath, header=False, sep='\001')
         logger.info(f'{filepath} writing done')
