@@ -246,6 +246,7 @@ def process_gold(spark, dg_config: DgConfig, args):
 
         send_sns_alert(f"{type} Transformer: EMR processing failed", e)
         logger.error(f"{type} Transformer: EMR processing failed {e}", exc_info=True)
+        raise Exception(f"{type} Transformer: EMR processing failed {e}")
 
     finally:
         filepath = f"{dg_config.s3a_bucket}/{dg_config.metadata_path}{args_dt}_{datetime.utcnow()}"
