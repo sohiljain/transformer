@@ -240,7 +240,7 @@ def process_gold(spark, dg_config: DgConfig, args):
             destination=dg_config.s3_gold_path,
             args=args,
             event_result='FAILURE',
-            event_notes={'FAILURE_REASON': e.desc}
+            event_notes={'FAILURE_REASON': str(e)}
         )
         all_tables_metadata.append(table_metadata)
 
