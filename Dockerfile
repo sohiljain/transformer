@@ -11,7 +11,7 @@ RUN apt-get install -y python3-gnupg
 RUN pip install pipenv
 
 COPY Pipfile .
-COPY Pipfile.lock .
+#COPY Pipfile.lock .
 COPY ./src .
 RUN mkdir -p /code/gpghome/
 
