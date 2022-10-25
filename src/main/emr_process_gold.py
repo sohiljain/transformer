@@ -232,15 +232,15 @@ def process_gold(spark, dg_config: DgConfig, args):
             brand_id=type,
             entity_type=table or "",
             ingestion_date=args_dt,
-            source_count= source_count,
-            destination_count= destination_count,
+            source_count= source_count or None,
+            destination_count= destination_count or None,
             source=dg_config.remote_1010_path,
             event_start_time=event_start_time,
             event_end_time=datetime.utcnow(),
             destination=dg_config.s3_gold_path,
             args=args,
             event_result='FAILURE',
-            event_notes={'FAILURE_REASON': str(e)}
+            event_notes={'FAILURE_REASON': str(e)[:100000]}
         )
         all_tables_metadata.append(table_metadata)
 
