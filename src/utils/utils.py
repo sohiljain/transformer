@@ -7,7 +7,6 @@ import sys
 import gnupg
 import boto3
 import errno
-from botocore.exceptions import ClientError
 
 s3_resource = boto3.resource('s3')
 s3_client = boto3.client('s3')
@@ -114,6 +113,7 @@ def copy_staging_files(s3_path, folder, filename, bucket, s3_archive_path):
         raise Exception(f"Error in copy staging file {e}")
     logger.info((f"Done copy staging file to {s3_archive_path}/{folder}/{filename}"))
 
+
 def copy_weekly_staging_files(s3_path, folder, filename, bucket, s3_weekly_path, partition_col):
     """
     Copy object A as object B
@@ -178,7 +178,6 @@ def gpg_decrytion(decryption_key=None, root_dir=None, bucket=None, gnupghome=Non
         raise Exception(f"Failed to decrypt file {e}")
 
 
-
 def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table, type):
     """
     Records count check before storing at gold path
@@ -197,28 +196,31 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table, typ
 
         table = table.replace('discounts', 'trans_disc_xref')
         df_staging = spark.read.csv(f'{s3a_bucket}/{s3_staging_path_1010}/{table}/', sep='|',
-                                        header=True, nullValue='\\N')
+                                    header=True, nullValue='\\N')
 
         logger.info(f'{table} test begins')
 
         count_transactiontimestamp = df_transformed.where(
             "transactiontimestamp='' or transactiontimestamp is null").count() if table == 'transaction_item' else 0
 
-        count_check_id = df_transformed.where("check_id='' or check_id is null").count() if table in ['transaction_item',
-                        'transactions', 'tenders', 'discounts'] else 0
+        count_check_id = df_transformed.where("check_id='' or check_id is null").count() if table in [
+            'transaction_item',
+            'transactions', 'tenders', 'discounts'] else 0
 
         # Customer-name check for tender table
         if table == 'tenders':
             count_customer_name = df_transformed.select("customer_name").distinct().count()
             sns_msg = f"Customer name count in tenders : {count_customer_name}\nTransformed record count : {df_transformed.count()} Staging row count : {df_staging.count()} "
             logger.info(sns_msg)
-            if (count_customer_name/df_transformed.count() > 0.2 and df_transformed.count() == df_staging.count()
+            if (count_customer_name / df_transformed.count() > 0.2 and df_transformed.count() == df_staging.count()
                     and count_transactiontimestamp == 0 and count_check_id == 0):
                 logger.info("All validations successful")
+                return df_staging.count(), df_transformed.count(), "SUCCESS"
             else:
                 # For tenders, we only send sns alerts otherwise Historical fails because historical doesn't match exact
                 send_sns_alert(f" {type} Transformer: {table} Customer Name low matches or count mismatch", sns_msg)
                 logger.info(f"Customer Name low matches or count mismatch {sns_msg}")
+                return df_staging.count(), df_transformed.count(), "WARNING"
 
         # Count check between staging and temp table
         else:
@@ -226,6 +228,7 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table, typ
             logger.info(sns_msg)
             if df_transformed.count() == df_staging.count() and count_transactiontimestamp == 0 and count_check_id == 0:
                 logger.info("All validations successful")
+                return df_staging.count(), df_transformed.count(), "SUCCESS"
             else:
                 # Send alert if conditions are not met and exit
                 logger.info("Transformed Counts")
@@ -234,7 +237,9 @@ def count_check(spark, s3a_bucket, s3_staging_path_1010, s3_tmp_path, table, typ
                 logger.info("Staging Counts")
                 df_staging.groupBy("dt").count().show()
 
-                raise Exception(f"Count check failure for {table}. {sns_msg}")
+                return df_staging.count(), df_transformed.count(), "FAILURE"
+
+
     except Exception as e:
         logger.error(e)
         raise Exception(e)
