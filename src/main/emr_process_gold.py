@@ -249,13 +249,13 @@ def process_gold(spark, dg_config: DgConfig, args):
         raise Exception(f"{type} Transformer: EMR processing failed {e}")
 
     finally:
-        filepath = f"{dg_config.s3a_bucket}/{dg_config.metadata_path}{args_dt}_{datetime.utcnow()}"
+        filepath = f"{dg_config.metadata_path}{args_dt}_{datetime.utcnow()}"
         tmp_path = f"{dg_config.s3a_bucket}/{dg_config.s3_tmp_path}/{table}/"
         df = spark.createDataFrame(all_tables_metadata, schema=schema)
         df = df.select(["BRAND_SID", "EVENT_TYPE", "DATA_CATEGORY", "INGESTION_DATE", "ENTITY_TYPE", "SOURCE_COUNT", "DESTINATION_COUNT", "SOURCE", "DESTINATION", "EVENT_START_TIME", "EVENT_END_TIME", "EVENT_RESULT", "EVENT_NOTES"])
         df.repartition(1).write.csv(filepath, header=False, sep='\001')
         logger.info(f'{filepath} writing done')
-        logger.info(f"Metadata writing done on {dg_config.s3a_bucket}/{dg_config.metadata_path}")
+        logger.info(f"Metadata writing done on {dg_config.metadata_path}")
         s3_delete_file(dg_config.s3_tmp_path, dg_config.bucket)
         logger.info(f"Deleted temporary file path {dg_config.s3_tmp_path}")
         s3_delete_file(dg_config.s3_staging_path_1010, dg_config.bucket)
