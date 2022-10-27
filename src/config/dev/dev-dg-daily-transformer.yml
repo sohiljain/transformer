@@ -14,7 +14,7 @@ s3_archive_path_weekly: dollargeneral/weekly_transformed/archive
 remote_Aurus_path: dollargeneral/Aurus/Daily
 local_Path: Documents/DG
 secret: /dev-cdp/SecretManager/dollargeneral-transformer/
-metadata_path: metadata_v2/transformer/
+metadata_path: s3a://dev-cdp-data-lake/metadata_v2/transformer/
 aurus_startdate: '20200910'
 
 table_queries:
