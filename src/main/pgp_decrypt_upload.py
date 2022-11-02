@@ -122,39 +122,47 @@ def process_aurus(dg_config, root_dir, date_value=dt.datetime.now().strftime('%Y
     logger.info(f'Downloading from {prefix}')
 
     try:
-        # Iterate over directory
-        for result in paginator.paginate(Bucket=dg_config.bucket, Prefix=prefix):
-            for content in result.get('Contents', []):
-                filename = content['Key'].split('/')[-1]
-                folder = content['Key'].split('/')[-3]
+        # Check if aurus decrypted file already present
+        aurus_decrypted_path = f'{dg_config.s3_staging_path}/aurus/ADTFF_5_4_4_{date_value}'
+        for result in paginator.paginate(Bucket=dg_config.bucket, Prefix=aurus_decrypted_path):
+            if 'Contents'in result:
+                for content in result['Contents']:
+                    filename_aurus = content['Key'].split('/')[-1]
+                    logger.info(f'{filename_aurus} aurus decrypted file already present')
+            else:
+                # Iterate over directory
+                for result in paginator.paginate(Bucket=dg_config.bucket, Prefix=prefix):
+                    for content in result.get('Contents', []):
+                        filename = content['Key'].split('/')[-1]
+                        folder = content['Key'].split('/')[-3]
 
-                try:
-                    # Skip paths ending in /
-                    if not content['Key'].endswith('/'):
-                        local_file_absolute_path = f'{dg_config.local_Path}/{filename}'
+                        try:
+                            # Skip paths ending in /
+                            if not content['Key'].endswith('/'):
+                                local_file_absolute_path = f'{dg_config.local_Path}/{filename}'
 
-                        s3_upload_file_path = f'''{dg_config.s3_staging_path}/{folder.lower()}/{filename.replace('.pgp', '')}'''
+                                s3_upload_file_path = f'''{dg_config.s3_staging_path}/{folder.lower()}/{filename.replace('.pgp', '')}'''
 
-                        # Make sure directories exist and file doesnot exist
-                        assert_file_exists(dg_config.local_Path, filename)
+                                # Make sure directories exist and file doesnot exist
+                                assert_file_exists(dg_config.local_Path, filename)
 
-                        # Aurus - Download file to local path
-                        s3_client.download_file(dg_config.bucket, content['Key'], local_file_absolute_path)
-                        logger.info(f'{local_file_absolute_path} downloaded')
+                                # Aurus - Download file to local path
+                                s3_client.download_file(dg_config.bucket, content['Key'], local_file_absolute_path)
+                                logger.info(f'{local_file_absolute_path} downloaded')
 
-                        # Decrypt aurus file and Upload to tranformed s3 directory
-                        with open(local_file_absolute_path, 'rb') as f:
-                            gpg_aurus.decrypt_file(f, passphrase=dg_config.passphrase, output="tmp.csv")
+                                # Decrypt aurus file and Upload to tranformed s3 directory
+                                with open(local_file_absolute_path, 'rb') as f:
+                                    gpg_aurus.decrypt_file(f, passphrase=dg_config.passphrase, output="tmp.csv")
 
-                        logger.info(f'{local_file_absolute_path} decrypted to tmp.csv')
+                                logger.info(f'{local_file_absolute_path} decrypted to tmp.csv')
 
-                        # Upload file to s3
-                        s3_resource.meta.client.upload_file(Filename='tmp.csv', Bucket=dg_config.bucket,
-                                                            Key=s3_upload_file_path)
-                        logger.info(f'tmp.csv uploaded to {s3_upload_file_path}')
+                                # Upload file to s3
+                                s3_resource.meta.client.upload_file(Filename='tmp.csv', Bucket=dg_config.bucket,
+                                                                    Key=s3_upload_file_path)
+                                logger.info(f'tmp.csv uploaded to {s3_upload_file_path}')
 
-                except Exception as e:
-                    raise Exception(f"Error in PGP-Decrypt Aurus \n {e}")
+                        except Exception as e:
+                            raise Exception(f"Error in PGP-Decrypt Aurus \n {e}")
 
     except Exception as e:
         raise Exception(f"S3 Object not found {prefix}\n {e}")

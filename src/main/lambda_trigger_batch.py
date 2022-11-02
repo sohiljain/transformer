@@ -67,7 +67,7 @@ def lambda_handler(event, context):
 
                 except Exception as e:
                     return_msg = f"{type} Transformer Batch failed. Either batch failed or incorrect event passed"
-                    send_sns_alert(return_msg, e)
+                    # send_sns_alert(return_msg, e)
                     logger.error(f"{return_msg} {e}", exc_info=True)
 
             else:
@@ -222,11 +222,13 @@ def trigger_batch_pgp_decrypt(date_value, checks3flag, env_batch, type, schedule
     :param date_value: date/date_range of file to be processed
     :return: Appropriate success/failure message
     """
-
     # check if S3 1010 files are present for the datevalue
     if checks3flag:
+        if not check_aurus_s3_files(date_value):
+            sys.exit(0)
         if not check_s3_files(date_value, type, s3_key, schedule):
             sys.exit(0)
+
 
     # starting pgp_decrypt batch job
     batch = boto3.client('batch', region_name='us-west-2')
@@ -292,3 +294,24 @@ def is_another_emr_job_running(jobName):
     logger.info(f"No current emr job running for {jobName}")
 
     return False
+
+
+def check_aurus_s3_files(date_value):
+    # Check for aurus file
+    try:
+        s3_client = boto3.client('s3')
+        bucket = os.getenv('S3_BUCKET_RAW_DATA_1')
+        aurus_path = f'dollargeneral/Aurus/Daily/ADTFF_5_4_4_{date_value}'
+        paginator = s3_client.get_paginator('list_objects')
+        logger.info(
+            f"Checking for {aurus_path} for date {date_value}")
+        for result in paginator.paginate(Bucket=bucket, Prefix=aurus_path):
+            for content in result['Contents']:
+                filename = content['Key'].split('/')[-1]
+        aurus_flag = True
+    except Exception as e:
+        return_msg = f"{type} Aurus File is not available yet"
+        aurus_flag = False
+        logger.error(f"{return_msg} {e}", exc_info=True)
+
+    return aurus_flag
