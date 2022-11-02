@@ -67,7 +67,7 @@ def lambda_handler(event, context):
 
                 except Exception as e:
                     return_msg = f"{type} Transformer Batch failed. Either batch failed or incorrect event passed"
-                    # send_sns_alert(return_msg, e)
+                    send_sns_alert(return_msg, e)
                     logger.error(f"{return_msg} {e}", exc_info=True)
 
             else:
