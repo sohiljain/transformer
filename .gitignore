@@ -1,0 +1,14 @@
+venv/
+.venv/
+.idea/
+.serverless/
+__pycache__/
+*.pyc
+.DS_Store
+*.egg-info/
+dist/
+build/
+spark-warehouse/
+gpghome/
+*.csv.gz
+tmp/
